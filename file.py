@@ -34,27 +34,27 @@ def load_library() -> Library:
                 
             console.print("[bold green]✔[/bold green] Bibliothèque chargée avec succès !")
             time.sleep(1.5)
-            os.system('clear')
+            os.system('cls' if os.name == 'nt' else 'clear')
             return library
 
         except FileNotFoundError:
             console.print("[bold yellow]⚠️ Fichier 'inventory.json' introuvable. Initialisation d'une bibliothèque vide.[/bold yellow]")
             time.sleep(2)
-            os.system('clear')
+            os.system('cls' if os.name == 'nt' else 'clear')
             return library
         except PermissionError:
             console.print("[bold red]❌ Erreur : permissions insuffisantes pour ouvrir le fichier.[/bold red]")
             time.sleep(2)
-            os.system('clear')
+            os.system('cls' if os.name == 'nt' else 'clear')
             return library
         except Exception as e:
             console.print("[bold magenta]Fichier vide ou corrompu. Création d'une nouvelle base.[/bold magenta]")
             time.sleep(2)
-            os.system('clear')
+            os.system('cls' if os.name == 'nt' else 'clear')
             return library
     
 def save_library(library: Library) -> None:
-    os.system('clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
     
     # Création du spinner animé pour la sauvegarde
     with console.status("[bold green]Sauvegarde de la bibliothèque en cours...", spinner="bouncingBar") as status:
@@ -69,4 +69,4 @@ def save_library(library: Library) -> None:
             
     console.print("[bold green]✔[/bold green] Bibliothèque sauvegardée avec succès !")
     time.sleep(1.5)
-    os.system('clear')
+    os.system('cls' if os.name == 'nt' else 'clear')

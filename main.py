@@ -4,18 +4,14 @@
 # Projet de bibliothèque
 
 import os
-os.add_dll_directory(r"C:\Users\NicolasRossel\OneDrive - Abilene Advisors SA\Desktop\Dev\Learning\Python\Library\.venv\Lib\site-packages\pyzbar")
-import cv2
 import time
 import file
 import scanner
-import requests
 from book import Book
 from library import Library
 from rich.panel import Panel
 from InquirerPy import inquirer
 from rich.console import Console
-from pyzbar.pyzbar import decode
 
 console = Console()
 
@@ -24,7 +20,7 @@ if __name__ == "__main__":
     library = file.load_library()
 
     while True:
-        os.system('clear')
+        os.system('cls' if os.name == 'nt' else 'clear')
         console.print(Panel("✨ [bold cyan]GESTIONNAIRE DE BIBLIOTHÈQUE[/bold cyan] ✨", expand=False, border_style="blue"))
         
         # Sélection du menu principal avec les flèches du clavier
@@ -43,7 +39,7 @@ if __name__ == "__main__":
 
         match choice:
             case "1":
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 console.print("[bold green]--- AJOUTER UN LIVRE ---[/bold green]\n")
                 
                 # Menu pour choisir la méthode d'ajout
@@ -87,7 +83,7 @@ if __name__ == "__main__":
 
                 # Si l'utilisateur a choisi manuel OU si le scan internet a échoué
                 if mode_ajout == "manuel":
-                    os.system('clear')
+                    os.system('cls' if os.name == 'nt' else 'clear')
                     console.print("[bold green]--- SAISIE MANUELLE ---[/bold green]\n")
                     titre = input("Titre du livre : ").strip()
                     auteur = input("Auteur du livre : ").strip()
@@ -106,16 +102,16 @@ if __name__ == "__main__":
                         choices=[{"name": "Oui", "value": True}, {"name": "Non", "value": False}]
                     ).execute()
                     
-                    # Création et ajout final du livre
-                    book = Book(titre, auteur, annee_publication, posseder, deja_lu, saga)
+                    # Création et ajout final du livre (arguments nommés pour éviter toute inversion)
+                    book = Book(titre, auteur, annee_publication, saga=saga, posseder=posseder, deja_lu=deja_lu)
                     library.add_book(book)
                     time.sleep(2.5)
                 
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "2":
                 library.modify_book() # Plus besoin de lui passer un objet Book temporaire
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "3":
                 print("Rechercher par titre (a), par saga (b), par auteur (c), par livre possédé (d) ou par livre lu (e) ?")
@@ -128,44 +124,44 @@ if __name__ == "__main__":
                         library.search_book(book)
                     case "b":
                         saga = input("Saga à rechercher : ")
-                        book = Book("", "", "", saga, False, False)
+                        book = Book("", "", "", saga=saga)
                         library.search_book(book)
                     case "c":
                         auteur = input("Auteur du livre à rechercher : ")
                         book = Book("", auteur, "")
                         library.search_book(book)
                     case "d":
-                        book = Book("", "", "", True, False)
+                        book = Book("", "", "", posseder=True)
                         library.search_book(book)
                     case "e":
-                        book = Book("", "", "", False, True)
+                        book = Book("", "", "", deja_lu=True)
                         library.search_book(book)
                     case _:
                         console.print("[bold red]Option invalide, aucune recherche effectuée.[/bold red]")
                         
                 time.sleep(4)
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "4":
                 library.remove_book() # Plus besoin de demander le titre au clavier ici
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
 
                 
             case "5":
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 library.display_inventory()  # Tout se passe de manière autonome ici
                 input("\nAppuyez sur Entrée pour revenir au menu...")
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "6":
                 file.save_library(library)
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 console.print("[bold yellow]Au revoir ![/bold yellow]")
                 time.sleep(2)
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')
                 break
                 
             case _:
                 console.print("[bold red]Option invalide, veuillez réessayer.[/bold red]")
                 time.sleep(1.5)
-                os.system('clear')
+                os.system('cls' if os.name == 'nt' else 'clear')

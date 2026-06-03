@@ -4,35 +4,20 @@ Une application console interactive en Python permettant de gérer l'inventaire 
 
 ---
 
-## 🛠️ Prérequis Système
-
-Pour que le scanner de codes-barres fonctionne, le système d'exploitation a besoin d'une bibliothèque graphique nommée `zbar`.
-
-### 🪟 Sur Windows (Recommandé pour l'usage de la webcam)
-Il n'y a **aucune installation système requise**. Les composants système sont directement intégrés dans les paquets Python.
-
-### 🐧 Sur Linux / Ubuntu / WSL
-Vous devez installer la bibliothèque partagée `zbar` via le terminal système avant de lancer le script :
-```bash
-sudo apt-get update
-sudo apt-get install -y libzbar0
-```
-
----
-
 ## 📦 Installation des Dépendances Python
 
 Assurez-vous d'avoir Python 3.10 ou une version supérieure installée. Ouvrez votre terminal à la racine du projet et exécutez la commande suivante pour installer toutes les bibliothèques requises :
 
 ```bash
-pip install rich InquirerPy opencv-python pyzbar requests
+pip install rich InquirerPy opencv-python requests
 ```
+
+Aucune installation système n'est requise : le décodage des codes-barres utilise le détecteur natif d'OpenCV (`cv2.barcode`), sans dépendance externe.
 
 ### À quoi servent ces packages ?
 * **`rich`** : Pour l'affichage des tableaux colorés, des panneaux et des animations de chargement (*spinners*).
 * **`InquirerPy`** : Pour la navigation dans les menus à l'aide des flèches du clavier et de la touche Entrée.
-* **`opencv-python`** : Pour l'accès à la webcam et la capture vidéo en temps réel.
-* **`pyzbar`** : Pour le décodage instantané des codes-barres (ISBN) présents sur les livres.
+* **`opencv-python`** : Pour l'accès à la webcam, la capture vidéo en temps réel et le décodage des codes-barres (ISBN).
 * **`requests`** : Pour interroger l'API publique *Open Library* et récupérer le titre, l'auteur et l'année du livre scanné.
 
 ---

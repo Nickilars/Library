@@ -1,4 +1,5 @@
 import os
+import time
 from book import Book
 from rich.console import Console
 from rich.panel import Panel
@@ -32,13 +33,13 @@ class Library:
             match_titre = search_criteria.titre and search_criteria.titre.lower() in b.titre.lower()
             match_auteur = search_criteria.auteur and search_criteria.auteur.lower() in b.auteur.lower()
             match_posseder = search_criteria.posseder is True and b.posseder is True
-            match_saga = search_criteria.saga and search_criteria.titre.lower() in b.titre.lower()
+            match_saga = search_criteria.saga != "Aucune" and search_criteria.saga and search_criteria.saga.lower() in getattr(b, "saga", "Aucune").lower()
             match_lu = search_criteria.deja_lu is True and b.deja_lu is True
 
-            if match_titre or match_auteur or match_posseder or match_lu:
+            if match_titre or match_auteur or match_saga or match_posseder or match_lu:
                 icon_possede = "[green]☑[/green]" if b.posseder else "[red]☐[/red]"
                 icon_lu = "[green]☑[/green]" if b.deja_lu else "[red]☐[/red]"
-                table.add_row(icon_possede, icon_lu, b.titre, getattr(b, "saga", "Acune"), b.auteur, str(b.annee_publication))
+                table.add_row(icon_possede, icon_lu, b.titre, getattr(b, "saga", "Aucune"), b.auteur, str(b.annee_publication))
                 trouve = True
 
         if trouve:
@@ -56,7 +57,7 @@ class Library:
         # On crée une liste de choix lisibles pour l'utilisateur
         choix_livres = [f"{b.titre} (par {b.auteur})" for b in self.books.values()]
         
-        os.system('clear')
+        os.system('cls' if os.name == 'nt' else 'clear')
         livre_selectionne_texte = inquirer.select(
             message="Sélectionnez le livre à modifier (Flèches + Entrée) :",
             choices=choix_livres,
@@ -68,7 +69,7 @@ class Library:
         target_book = self.books[titre_cle]
 
         # 2. Menu de sélection de la modification avec les flèches
-        os.system('clear')
+        os.system('cls' if os.name == 'nt' else 'clear')
         console.print(f"[bold cyan]Modification du livre :[/bold cyan] {target_book.titre}\n")
         
         option_choisie = inquirer.select(
@@ -133,7 +134,7 @@ class Library:
         # 1. Sélection du livre à supprimer avec les flèches
         choix_livres = [f"{b.titre} (par {b.auteur})" for b in self.books.values()]
         
-        os.system('clear')
+        os.system('cls' if os.name == 'nt' else 'clear')
         livre_selectionne_texte = inquirer.select(
             message="Sélectionnez le livre à supprimer (Flèches + Entrée) :",
             choices=choix_livres,
@@ -185,7 +186,7 @@ class Library:
         else:
             books_list = list(self.books.values())
             
-        os.system('clear')
+        os.system('cls' if os.name == 'nt' else 'clear')
         tableau = Table(title="📚 Liste des livres en stock", style="bold magenta", header_style="bold cyan")
         
         tableau.add_column("Titre", style="white bold")

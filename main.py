@@ -146,11 +146,9 @@ if __name__ == "__main__":
                 os.system('clear')
                 
             case "4":
-                titre = input("Titre du livre à supprimer : ")
-                book = Book(titre, "", "")
-                library.remove_book(book)
-                time.sleep(2)
+                library.remove_book() # Plus besoin de demander le titre au clavier ici
                 os.system('clear')
+
                 
             case "5":
                 os.system('clear')

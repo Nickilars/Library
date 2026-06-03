@@ -123,12 +123,41 @@ class Library:
 
         input("\nAppuyez sur Entrée pour continuer...")
 
-    def remove_book(self, book: Book) -> None:
-        if book.titre not in self.books:
-            console.print("[bold red]❌ Livre non trouvé, impossible de supprimer.[/bold red]")
+    def remove_book(self, book: Book = None) -> None:
+        """Supprime un livre en le sélectionnant graphiquement avec les flèches"""
+        if not self.books:
+            console.print("[bold red]❌ La bibliothèque est vide, aucun livre à supprimer.[/bold red]")
+            time.sleep(2)
+            return
+
+        # 1. Sélection du livre à supprimer avec les flèches
+        choix_livres = [f"{b.titre} (par {b.auteur})" for b in self.books.values()]
+        
+        os.system('clear')
+        livre_selectionne_texte = inquirer.select(
+            message="Sélectionnez le livre à supprimer (Flèches + Entrée) :",
+            choices=choix_livres,
+            pointer="👉"
+        ).execute()
+
+        # Retrouver la clé du dictionnaire (le titre)
+        titre_cle = livre_selectionne_texte.split(" (par ")[0]
+        deleted_book = self.books[titre_cle]
+
+        # 2. Confirmation de sécurité avant suppression
+        confirmation = inquirer.select(
+            message=f"Êtes-vous sûr de vouloir supprimer définitivement '{deleted_book.titre}' ?",
+            choices=[{"name": "Non, annuler", "value": False}, {"name": "Oui, supprimer", "value": True}]
+        ).execute()
+
+        if confirmation:
+            self.books.pop(titre_cle)
+            console.print(Panel(f"[red]🗑️ {deleted_book.titre}[/red] de {deleted_book.auteur} a été supprimé de l'inventaire.", border_style="red"))
         else:
-            deleted_book = self.books.pop(book.titre)
-            console.print(Panel(f"[red]🗑️ {deleted_book.titre}[/red] de {deleted_book.auteur} a été supprimé.", border_style="red"))
+            console.print("[bold yellow]⚠️ Suppression annulée.[/bold yellow]")
+            
+        time.sleep(2)
+
 
     def display_inventory(self) -> None:
         if not self.books:

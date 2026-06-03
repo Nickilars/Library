@@ -1,3 +1,4 @@
+import re
 import cv2
 import requests
 import xml.etree.ElementTree as ET
@@ -59,6 +60,13 @@ def scanner_code_barre() -> str:
 
 
 
+def extraire_annee(date_brute: str) -> str:
+    """Trouve une année plausible (1500-2099) dans une date au format libre.
+    Gère les formats variés des API : '1972', '07-01-1972', 'DL 2025', 'June 1997'."""
+    match = re.search(r"\b(1[5-9]\d{2}|20\d{2})\b", date_brute or "")
+    return match.group(1) if match else "Inconnue"
+
+
 def recuperer_infos_livre(isbn: str) -> dict:
     """Interroge les sources de données dans l'ordre : Open Library (mondiale),
     puis la BnF (quasi exhaustive pour l'édition française). Retourne les infos
@@ -84,8 +92,7 @@ def interroger_open_library(isbn: str) -> dict:
             auteurs_liste = infos.get("authors", [])
             auteur = auteurs_liste[0].get("name", "Auteur Inconnu") if auteurs_liste else "Auteur Inconnu"
 
-            date_pub = infos.get("publish_date", "Inconnue")
-            annee = "".join(filter(str.isdigit, date_pub))[:4] or "Inconnue"
+            annee = extraire_annee(infos.get("publish_date", ""))
 
             return {
                 "titre": titre,
@@ -98,61 +105,80 @@ def interroger_open_library(isbn: str) -> dict:
     return None
 
 
-def nettoyer_titre_bnf(titre_brut: str) -> str:
-    """Simplifie un titre au format bibliothécaire de la BnF.
-    Ex : 'Le vaisseau magique : roman / Robin Hobb ; traduit...' -> 'Le vaisseau magique'"""
-    return titre_brut.split(" / ")[0].split(" : ")[0].strip()
+def parser_notice_unimarc(xml_texte: str) -> dict:
+    """Extrait titre, auteur, année et saga d'une notice Unimarc de la BnF.
+    Champs utilisés : 200$a (titre), 700$a/$b (auteur), 214$d ou 210$d (date),
+    461$t (série mère) avec repli sur 225$a (collection hors éditeur)."""
+    try:
+        racine = ET.fromstring(xml_texte)
+    except ET.ParseError:
+        return None
 
+    # On collecte tous les champs (tag, {code: valeur}) sans se soucier des namespaces
+    champs = []
+    for elem in racine.iter():
+        if elem.tag.split("}")[-1] == "datafield":
+            sous_champs = [(sf.get("code"), (sf.text or "").strip()) for sf in elem]
+            champs.append((elem.get("tag"), sous_champs))
 
-def nettoyer_auteur_bnf(auteur_brut: str) -> str:
-    """Convertit un auteur au format BnF en format lisible.
-    Ex : 'Hobb, Robin (1952-....). Auteur du texte' -> 'Robin Hobb'"""
-    nom = auteur_brut.split("(")[0].strip().rstrip(".")
-    if "," in nom:
-        famille, prenom = nom.split(",", 1)
-        return f"{prenom.strip()} {famille.strip()}"
-    return nom
+    def premier(tag_voulu: str, code_voulu: str) -> str:
+        """Retourne la première valeur trouvée pour un champ/sous-champ donné."""
+        for tag, sous_champs in champs:
+            if tag == tag_voulu:
+                for code, valeur in sous_champs:
+                    if code == code_voulu and valeur:
+                        return valeur
+        return ""
+
+    # Titre (obligatoire : sans lui, la notice est inexploitable)
+    titre = premier("200", "a")
+    if not titre:
+        return None
+
+    # Auteur : l'Unimarc sépare déjà nom ($a) et prénom ($b)
+    nom, prenom = premier("700", "a"), premier("700", "b")
+    auteur = f"{prenom} {nom}".strip() or "Auteur Inconnu"
+
+    # Année : champ 214 (récent) ou 210 (anciennes notices), ex : "DL 2025"
+    annee = extraire_annee(premier("214", "d") or premier("210", "d"))
+
+    # Saga : le champ 461 (série mère) est le plus fiable.
+    # À défaut, on prend un champ 225 (collection) qui n'est pas
+    # la collection commerciale de l'éditeur (ex : "J'ai lu ; 6736").
+    editeur = premier("214", "c") or premier("210", "c")
+    saga = premier("461", "t")
+    if not saga:
+        for tag, sous_champs in champs:
+            if tag == "225":
+                for code, valeur in sous_champs:
+                    if code == "a" and valeur and valeur.lower() != editeur.lower():
+                        saga = valeur
+                        break
+            if saga:
+                break
+
+    return {
+        "titre": titre,
+        "auteur": auteur,
+        "annee": annee,
+        "saga": saga or "Aucune"
+    }
 
 
 def interroger_bnf(isbn: str) -> dict:
     """Interroge le catalogue de la Bibliothèque nationale de France (API SRU,
-    XML Dublin Core) et retourne les infos structurées du livre."""
+    notices Unimarc complètes) et retourne les infos structurées du livre,
+    y compris la saga / série quand elle est cataloguée."""
     url = "https://catalogue.bnf.fr/api/SRU"
     params = {
         "version": "1.2",
         "operation": "searchRetrieve",
         "query": f'bib.isbn any "{isbn}"',
-        "recordSchema": "dublincore",
-    }
-    ns = {
-        "srw": "http://www.loc.gov/zing/srw/",
-        "dc": "http://purl.org/dc/elements/1.1/",
+        "recordSchema": "unimarcxchange",
     }
     try:
         response = requests.get(url, params=params, timeout=10)
-        racine = ET.fromstring(response.text)
-
-        record = racine.find(".//srw:recordData", ns)
-        if record is None:
-            return None
-
-        titre_xml = record.find(".//dc:title", ns)
-        if titre_xml is None or not titre_xml.text:
-            return None
-
-        auteur_xml = record.find(".//dc:creator", ns)
-        auteur = nettoyer_auteur_bnf(auteur_xml.text) if (auteur_xml is not None and auteur_xml.text) else "Auteur Inconnu"
-
-        date_xml = record.find(".//dc:date", ns)
-        date_pub = date_xml.text if (date_xml is not None and date_xml.text) else ""
-        annee = "".join(filter(str.isdigit, date_pub))[:4] or "Inconnue"
-
-        return {
-            "titre": nettoyer_titre_bnf(titre_xml.text),
-            "auteur": auteur,
-            "annee": annee,
-            "saga": "Aucune"
-        }
+        return parser_notice_unimarc(response.text)
     except Exception:
         pass
     return None

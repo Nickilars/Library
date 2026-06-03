@@ -69,9 +69,14 @@ if __name__ == "__main__":
                             titre = infos_internet['titre']
                             auteur = infos_internet['auteur']
                             annee_publication = infos_internet['annee']
-                            
-                            # On demande uniquement de compléter la Saga
-                            saga = input("Nom de la saga (Laissez vide si aucune) : ").strip() or "Aucune"
+                            saga_trouvee = infos_internet.get('saga', "Aucune")
+
+                            # Si la saga a été trouvée en ligne, on la propose par défaut
+                            if saga_trouvee != "Aucune":
+                                console.print(f"📚 Saga détectée : [bold cyan]{saga_trouvee}[/bold cyan]")
+                                saga = input(f"Nom de la saga (Entrée pour garder '{saga_trouvee}') : ").strip() or saga_trouvee
+                            else:
+                                saga = input("Nom de la saga (Laissez vide si aucune) : ").strip() or "Aucune"
                         else:
                             console.print("\n[bold red]❌ Impossible de trouver ce livre sur internet.[/bold red]")
                             input("Appuyez sur Entrée pour basculer en saisie manuelle...")

@@ -54,5 +54,13 @@
         "annee_publication": "Inconnu",
         "posseder": true,
         "deja_lu": true
+    },
+    "Le vaisseau magique": {
+        "titre": "Le vaisseau magique",
+        "auteur": "Robin Hobb",
+        "saga": "Les Aventuriers de la mer",
+        "annee_publication": "2025",
+        "posseder": true,
+        "deja_lu": false
     }
 }

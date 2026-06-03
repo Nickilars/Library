@@ -4,6 +4,7 @@
 # Projet de bibliothèque
 
 import os
+os.add_dll_directory(r"C:\Users\NicolasRossel\OneDrive - Abilene Advisors SA\Desktop\Dev\Learning\Python\Library\.venv\Lib\site-packages\pyzbar")
 import cv2
 import time
 import file

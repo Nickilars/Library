@@ -56,6 +56,40 @@ def test_validation_ok_normalise():
     assert b.auteur == "Herbert"
 
 
+def test_add_puis_get():
+    database.init_db(":memory:")
+    nouvel_id = database.add_book(Book("Dune", "Herbert", "1965", statut_lecture="lu"))
+    assert isinstance(nouvel_id, int)
+    b = database.get_book(nouvel_id)
+    assert b.titre == "Dune"
+    assert b.statut_lecture == "lu"
+    assert b.id == nouvel_id
+    assert b.date_ajout != ""  # rempli automatiquement
+
+
+def test_get_book_inexistant():
+    database.init_db(":memory:")
+    assert database.get_book(999) is None
+
+
+def test_deux_livres_meme_titre():
+    # Régression : le bug d'origine écrasait les homonymes.
+    database.init_db(":memory:")
+    database.add_book(Book("Le Cycle", "Auteur A"))
+    database.add_book(Book("Le Cycle", "Auteur B"))
+    assert len(database.get_all_books()) == 2
+
+
+def test_injection_sql_inoffensive():
+    # SEC-1 : une valeur piégée est traitée comme une donnée littérale.
+    database.init_db(":memory:")
+    piege = "Dune'); DROP TABLE books;--"
+    database.add_book(Book(piege, "Herbert"))
+    livres = database.get_all_books()
+    assert len(livres) == 1
+    assert livres[0].titre == piege  # stocké tel quel, table intacte
+
+
 if __name__ == "__main__":
     test_init_cree_table_vide()
     test_validation_note_hors_domaine()
@@ -63,4 +97,8 @@ if __name__ == "__main__":
     test_validation_isbn_non_numerique()
     test_validation_titre_vide()
     test_validation_ok_normalise()
+    test_add_puis_get()
+    test_get_book_inexistant()
+    test_deux_livres_meme_titre()
+    test_injection_sql_inoffensive()
     print("OK : tests database (init) passent.")

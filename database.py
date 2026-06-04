@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # Couche d'accès aux données (DAL). Encapsule tout le SQL : le reste du code
 # n'appelle que ces fonctions, jamais sqlite3 directement.
+import datetime
 import os
 import stat
 import sqlite3
@@ -126,3 +127,28 @@ def get_all_books() -> list:
     """Retourne tous les livres, triés par titre."""
     rows = _get_conn().execute("SELECT * FROM books ORDER BY titre COLLATE NOCASE").fetchall()
     return [_book_from_row(r) for r in rows]
+
+
+def add_book(book: Book) -> int:
+    """Valide puis insère un livre. Retourne l'id généré.
+    Remplit date_ajout (date du jour) si absent."""
+    book = valider_book(book)
+    date_ajout = book.date_ajout or datetime.date.today().isoformat()
+
+    conn = _get_conn()
+    cur = conn.execute(
+        """INSERT INTO books
+           (titre, auteur, annee_publication, isbn, saga, tome, statut_lecture,
+            possede, wishlist, note, commentaire, date_ajout, date_lecture)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (book.titre, book.auteur, book.annee_publication, book.isbn, book.saga,
+         book.tome, book.statut_lecture, int(book.possede), int(book.wishlist),
+         book.note, book.commentaire, date_ajout, book.date_lecture),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def get_book(book_id: int) -> "Book | None":
+    row = _get_conn().execute("SELECT * FROM books WHERE id = ?", (book_id,)).fetchone()
+    return _book_from_row(row) if row else None

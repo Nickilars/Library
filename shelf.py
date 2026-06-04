@@ -33,3 +33,25 @@ def couleur_tranche(titre: str, auteur: str) -> str:
     h = int(hashlib.md5(graine).hexdigest(), 16)
     teinte = h % 360
     return _hsl_vers_hex(teinte, 0.45, 0.38)
+
+
+def grouper_livres(livres: list) -> list:
+    """Groupe les livres par auteur puis par saga, dans un ordre stable.
+    Tri : auteur, puis sagas nommées avant 'Aucune', puis tome (numérotés croissants,
+    sans tome ensuite), puis titre. Retourne une liste de dicts :
+    [{'auteur': str, 'sagas': [{'nom': str, 'livres': [Book, ...]}, ...]}, ...]"""
+    livres_tries = sorted(livres, key=lambda b: (
+        b.auteur.casefold(),
+        (b.saga == "Aucune", b.saga.casefold()),   # sagas nommées d'abord, 'Aucune' en dernier
+        (b.tome is None, b.tome or 0),              # tomes numérotés croissants, None ensuite
+        b.titre.casefold(),
+    ))
+    groupes = []
+    for b in livres_tries:
+        if not groupes or groupes[-1]["auteur"] != b.auteur:
+            groupes.append({"auteur": b.auteur, "sagas": []})
+        sagas = groupes[-1]["sagas"]
+        if not sagas or sagas[-1]["nom"] != b.saga:
+            sagas.append({"nom": b.saga, "livres": []})
+        sagas[-1]["livres"].append(b)
+    return groupes

@@ -17,9 +17,7 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,.5);
 }
 .entete h1 { margin: 0 0 8px; font-size: 20px; }
-.entete nav a {
-  color: #c9a880; text-decoration: none; margin-right: 16px; font-weight: 600;
-}
+.entete nav a { color: #c9a880; text-decoration: none; margin-right: 16px; font-weight: 600; }
 .entete nav a:hover { color: #fff; }
 .controles { display: flex; gap: 16px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 #recherche {
@@ -33,13 +31,13 @@ body {
 }
 .chip.actif { background: #c9a880; color: #1a110a; font-weight: 600; }
 
+/* ---------- Niveau 0 : étagère, tranches SANS titre ---------- */
 .auteur { padding: 18px 20px; }
 .auteur-nom { color: #c9a880; font-size: 16px; margin: 0 0 10px; border-bottom: 1px solid #4a3826; padding-bottom: 4px; }
 .saga { margin-bottom: 14px; }
 .saga-nom { color: #b59a78; font-size: 13px; cursor: pointer; user-select: none; margin-bottom: 6px; }
 .saga-nom:hover { color: #fff; }
 .saga-compte { opacity: .6; }
-
 .rangee {
   display: flex; align-items: flex-end; gap: 3px;
   background: linear-gradient(var(--bois), var(--bois-fonce));
@@ -54,9 +52,8 @@ body {
   box-shadow: inset -3px 0 6px rgba(0,0,0,.45);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: height .25s, width .25s, transform .25s, margin .25s;
+  transition: height .25s, width .25s, transform .25s;
 }
-.saga.ouverte .livre { height: 160px; }
 .livre:hover { transform: translateY(-4px); }
 .tranche-titre {
   writing-mode: vertical-rl; transform: rotate(180deg);
@@ -64,29 +61,93 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-height: 110px; padding: 4px 0;
 }
-.livre.selectionne {
-  width: 90px; height: 170px;
-  background-size: cover; background-position: center;
-  transform: translateY(-8px);
-}
-.livre.selectionne .tranche-titre { display: none; }
-.livre.voisin-gauche { margin-right: 10px; }
-.livre.voisin-droite { margin-left: 10px; }
 .livre.masque { display: none; }
+/* Titres masqués au niveau 0 */
+.tranche-titre { display: none; }
 
-.panneau {
-  position: fixed; top: 0; right: 0; height: 100%; width: 320px;
-  background: #1a110a; box-shadow: -4px 0 16px rgba(0,0,0,.6);
-  padding: 20px; overflow-y: auto; transition: transform .3s; z-index: 20;
+/* ---------- Niveau 1 : vue focalisée ---------- */
+.barre-focus {
+  display: none; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 8;
+  background: #1a110a; padding: 10px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
 }
-.panneau.ferme { transform: translateX(100%); }
-.panneau-fermer { position: absolute; top: 10px; right: 12px; background: none; border: none; color: #c9a880; font-size: 18px; cursor: pointer; }
-.panneau-couverture { width: 140px; height: 210px; margin: 10px auto 16px; border-radius: 4px; background: #333 center/cover; box-shadow: 0 6px 18px rgba(0,0,0,.6); display: flex; align-items: flex-end; padding: 8px; }
-.panneau-couverture .repli { font-size: 12px; color: #f0e6d2; }
-.panneau-titre-ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.panneau h2 { font-size: 18px; margin: 0; }
-.crayon { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 4px 8px; cursor: not-allowed; opacity: .6; }
-.p-auteur { color: #c9a880; margin: 4px 0 12px; }
-.panneau p { font-size: 14px; margin: 4px 0; }
-.p-commentaire { color: #aaa; font-style: italic; margin-top: 10px; }
+body.mode-focus .barre-focus { display: flex; }
+#btn-retour { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+#btn-retour:hover { color: #fff; }
+#focus-nom { color: #c9a880; font-weight: 600; font-size: 16px; }
+
+/* En mode focus, ne montrer que l'auteur puis la saga focalisés */
+body.mode-focus .auteur { display: none; }
+body.mode-focus .auteur.auteur-focus { display: block; }
+body.mode-focus .auteur.auteur-focus .auteur-nom { display: none; }
+body.mode-focus .auteur.auteur-focus .saga { display: none; }
+body.mode-focus .auteur.auteur-focus .saga.focalisee { display: block; }
+body.mode-focus .auteur.auteur-focus .saga.focalisee .saga-nom { display: none; }
+/* Tranches agrandies + titres visibles en focus */
+body.mode-focus .saga.focalisee .rangee { justify-content: center; min-height: 280px; }
+body.mode-focus .saga.focalisee .livre { width: 60px; height: 240px; }
+body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px; max-height: 220px; }
+
+/* ---------- Niveau 2 : livre ouvert animé ---------- */
+.livre-ouvert {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,.72);
+  display: flex; align-items: center; justify-content: center;
+  perspective: 2000px;
+}
+.livre-ouvert.cache { display: none; }
+
+.livre3d { position: relative; width: 320px; height: 340px; }
+
+/* Double page (état final), sous les couches qui s'ouvrent */
+.spread { position: absolute; inset: 0; display: flex; }
+.page {
+  width: 160px; height: 340px; padding: 18px; overflow: auto;
+  color: #2b1d12; font-size: 14px;
+}
+.page-gauche { background: #ece4cf; border-radius: 6px 0 0 6px; border-right: 1px solid #d8cdb0; }
+.page-droite { background: #f3ecd9; border-radius: 0 6px 6px 0; }
+.page p { margin: 4px 0; }
+.titre-livre { font-weight: bold; font-size: 18px; margin: 0 0 6px !important; }
+.page .sous { color: #6d5a3a; }
+.page .note { color: #b8860b; font-size: 16px; }
+.page .commentaire { font-style: italic; color: #7a6a4a; margin-top: 10px; }
+.page .crayon { margin-top: 12px; background: #e0d6bf; border: 1px solid #c9bb98; color: #6d5a3a; border-radius: 6px; padding: 4px 8px; cursor: not-allowed; opacity: .7; }
+
+/* Couches qui s'ouvrent vers la gauche (charnière à gauche) en révélant la double page */
+.couverture, .feuille {
+  position: absolute; left: 0; top: 0;
+  width: 320px; height: 340px;
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  backface-visibility: hidden;
+  border-radius: 6px;
+}
+.feuille { background: #fbf6e9; z-index: 3; box-shadow: 0 0 1px #d8cdb0 inset; }
+.couverture {
+  z-index: 4; background: #555 center/cover;
+  box-shadow: 0 12px 32px rgba(0,0,0,.6);
+  display: flex; align-items: flex-end; padding: 14px;
+}
+.couv-repli { color: #fff; font-weight: bold; font-size: 14px; }
+
+/* Séquence : couverture s'ouvre à 2 s, puis les feuilles défilent en cascade */
+.livre3d.demarre .couverture {
+  transform: rotateY(-168deg);
+  transition: transform .8s ease-in;
+  transition-delay: 2s;
+}
+.livre3d.demarre .feuille {
+  transform: rotateY(-168deg);
+  transition: transform .5s ease-in;
+  transition-delay: calc(2.5s + var(--i) * 0.22s);
+}
+
+/* Raccourci : un clic sur le livre saute directement à l'état final (ouvert) */
+.livre3d.fini .couverture, .livre3d.fini .feuille {
+  transition: none;
+  transform: rotateY(-168deg);
+}
+
 .vide { padding: 40px; text-align: center; color: #b59a78; }

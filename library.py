@@ -9,6 +9,9 @@ from InquirerPy import inquirer
 
 console = Console()
 
+# Libellés lisibles des statuts de lecture (source unique pour l'affichage).
+STATUT_LABELS = {"non_lu": "À lire", "en_cours": "En cours", "lu": "Lu"}
+
 class Library:
     def __init__(self) -> None:
         # Les données vivent désormais dans SQLite (database.py), plus en mémoire.
@@ -47,8 +50,7 @@ class Library:
 
         for b in resultats:
             icon_possede = "[green]☑[/green]" if b.possede else "[red]☐[/red]"
-            statut = {"non_lu": "À lire", "en_cours": "En cours", "lu": "Lu"}.get(
-                b.statut_lecture, b.statut_lecture)
+            statut = STATUT_LABELS.get(b.statut_lecture, b.statut_lecture)
             table.add_row(icon_possede, statut, b.titre, b.saga, b.auteur,
                           str(b.annee_publication))
         console.print(table)
@@ -182,8 +184,7 @@ class Library:
 
         for b in livres:
             icon_possede = "[green]☑[/green]" if b.possede else "[red]☐[/red]"
-            statut = {"non_lu": "À lire", "en_cours": "En cours", "lu": "Lu"}.get(
-                b.statut_lecture, b.statut_lecture)
+            statut = STATUT_LABELS.get(b.statut_lecture, b.statut_lecture)
             saga = "[dim]Aucune[/dim]" if b.saga == "Aucune" else b.saga
             note = "★" * b.note if b.note else "[dim]-[/dim]"
             tableau.add_row(b.titre, saga, str(b.tome or "-"), b.auteur,

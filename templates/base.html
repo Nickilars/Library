@@ -26,25 +26,17 @@
     </div>
   </header>
 
+  <div id="barre-focus" class="barre-focus">
+    <button id="btn-retour">← Retour</button>
+    <span id="focus-nom"></span>
+  </div>
+
   <main id="etagere">
     {% block contenu %}{% endblock %}
   </main>
 
-  <aside id="panneau" class="panneau ferme" aria-hidden="true">
-    <button id="panneau-fermer" class="panneau-fermer" title="Fermer">✕</button>
-    <div id="panneau-couverture" class="panneau-couverture"></div>
-    <div class="panneau-infos">
-      <div class="panneau-titre-ligne">
-        <h2 id="p-titre"></h2>
-        <button id="p-modifier" class="crayon" disabled title="Modification — bientôt (Phase 3)">✏️</button>
-      </div>
-      <p id="p-auteur" class="p-auteur"></p>
-      <p id="p-saga"></p>
-      <p id="p-statut"></p>
-      <p id="p-note"></p>
-      <p id="p-commentaire" class="p-commentaire"></p>
-    </div>
-  </aside>
+  <!-- Overlay du livre ouvert (niveau 2), rempli par shelf.js -->
+  <div id="livre-ouvert" class="livre-ouvert cache"></div>
 
   <script src="/static/shelf.js"></script>
 </body>

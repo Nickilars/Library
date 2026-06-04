@@ -64,6 +64,11 @@ def _get_conn() -> sqlite3.Connection:
     return _conn
 
 
+def is_initialized() -> bool:
+    """True si la connexion a déjà été ouverte par init_db (utile au démarrage web)."""
+    return _conn is not None
+
+
 def valider_book(book: Book) -> Book:
     """SEC-2 : valide et normalise un Book avant écriture. Lève ValueError si invalide.
     Retourne un Book normalisé (champs texte strip()és)."""

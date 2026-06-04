@@ -25,13 +25,25 @@ function choisirLivre(el) {
     couv.innerHTML = '';
     const test = new Image();
     test.referrerPolicy = 'no-referrer';
-    test.onerror = () => { couv.style.backgroundImage = 'none'; couv.style.background = el.style.getPropertyValue('--c'); couv.innerHTML = `<span class="repli">${titre}</span>`; };
+    test.onerror = () => {
+      couv.style.backgroundImage = 'none';
+      couv.style.background = el.style.getPropertyValue('--c');
+      couv.replaceChildren();
+      const repli = document.createElement('span');
+      repli.className = 'repli';
+      repli.textContent = titre;
+      couv.appendChild(repli);
+    };
     test.src = url;
     el.style.backgroundImage = `url("${url}")`;
   } else {
     couv.style.backgroundImage = 'none';
     couv.style.background = el.style.getPropertyValue('--c');
-    couv.innerHTML = `<span class="repli">${titre}</span>`;
+    couv.replaceChildren();
+    const repli = document.createElement('span');
+    repli.className = 'repli';
+    repli.textContent = titre;
+    couv.appendChild(repli);
   }
 
   const statuts = { non_lu: 'À lire', en_cours: 'En cours', lu: 'Lu' };

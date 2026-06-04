@@ -54,6 +54,7 @@ if __name__ == "__main__":
                 ).execute()
 
                 titre, auteur, annee_publication, saga = "", "", "", "Aucune"
+                isbn, tome = "", None
                 continuer_ajout = True
 
                 if mode_ajout == "scan":
@@ -78,6 +79,8 @@ if __name__ == "__main__":
                                 saga = input(f"Nom de la saga (Entrée pour garder '{saga_trouvee}') : ").strip() or saga_trouvee
                             else:
                                 saga = input("Nom de la saga (Laissez vide si aucune) : ").strip() or "Aucune"
+                            # On récupère aussi le tome détecté (BnF), s'il existe
+                            tome = infos_internet.get('tome')
                         else:
                             console.print("\n[bold red]❌ Impossible de trouver ce livre sur internet.[/bold red]")
                             input("Appuyez sur Entrée pour basculer en saisie manuelle...")
@@ -109,6 +112,7 @@ if __name__ == "__main__":
                                  {"name": "Non", "value": False}]).execute()
 
                     book = Book(titre, auteur, annee_publication, saga=saga,
+                                isbn=isbn, tome=tome,
                                 statut_lecture=statut, possede=possede)
                     library.add_book(book)
                     time.sleep(2.5)

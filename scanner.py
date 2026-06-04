@@ -100,7 +100,7 @@ def interroger_open_library(isbn: str) -> dict:
                 "annee": annee,
                 "saga": "Aucune"
             }
-    except Exception:
+    except (requests.exceptions.RequestException, ValueError):
         pass
     return None
 
@@ -184,6 +184,6 @@ def interroger_bnf(isbn: str) -> dict:
     try:
         response = requests.get(url, params=params, timeout=10)
         return parser_notice_unimarc(response.text)
-    except Exception:
+    except requests.exceptions.RequestException:
         pass
     return None

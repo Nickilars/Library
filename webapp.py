@@ -4,8 +4,12 @@
 # Hôte/port/chemin base configurables par variables d'environnement.
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import database
+from shelf import couleur_tranche, grouper_livres
 
 
 @asynccontextmanager
@@ -17,6 +21,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Bibliothèque", lifespan=lifespan)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def accueil(request: Request):
+    possedes = [b for b in database.get_all_books() if b.possede]
+    return templates.TemplateResponse(request, "shelf.html", {
+        "groupes": grouper_livres(possedes),
+        "couleur": couleur_tranche,
+        "message_vide": "Votre collection est vide.",
+    })
 
 
 @app.get("/health")

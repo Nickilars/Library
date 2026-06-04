@@ -1,0 +1,37 @@
+{% if groupes %}
+  {% for groupe in groupes %}
+  <section class="auteur">
+    <h2 class="auteur-nom">{{ groupe.auteur }}</h2>
+    {% for saga in groupe.sagas %}
+    <div class="saga" data-saga="{{ saga.nom }}">
+      <div class="saga-nom" onclick="basculerSaga(this)">
+        {{ saga.nom }}
+        {% if saga.nom != "Aucune" %}<span class="saga-compte">({{ saga.livres|length }})</span>{% endif %}
+      </div>
+      <div class="rangee">
+        {% for livre in saga.livres %}
+        <div class="livre"
+             data-id="{{ livre.id }}"
+             data-titre="{{ livre.titre }}"
+             data-auteur="{{ livre.auteur }}"
+             data-annee="{{ livre.annee_publication }}"
+             data-saga="{{ livre.saga }}"
+             data-tome="{{ livre.tome if livre.tome is not none else '' }}"
+             data-statut="{{ livre.statut_lecture }}"
+             data-note="{{ livre.note if livre.note is not none else '' }}"
+             data-isbn="{{ livre.isbn }}"
+             data-commentaire="{{ livre.commentaire }}"
+             data-possede="{{ '1' if livre.possede else '0' }}"
+             style="--c: {{ couleur(livre.titre, livre.auteur) }}"
+             onclick="choisirLivre(this)">
+          <span class="tranche-titre">{{ livre.titre }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+{% else %}
+  <p class="vide">{{ message_vide }}</p>
+{% endif %}

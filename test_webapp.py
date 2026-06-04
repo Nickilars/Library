@@ -24,6 +24,41 @@ def test_health():
     assert r.status_code == 200
 
 
+def test_accueil_liste_possedes():
+    client = _client_avec_donnees()
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "Dune" in r.text
+    assert "Le Hobbit" in r.text
+    # Un livre uniquement wishlist n'apparaît pas sur la page collection
+    assert "À acheter" not in r.text
+
+
+def test_accueil_echappe_le_html():
+    # SEC-W1 : un titre piégé doit être échappé, jamais rendu comme balise active.
+    database.init_db(":memory:")
+    database.add_book(Book("<script>alert(1)</script>", "Pirate", possede=True))
+    from webapp import app
+    client = TestClient(app)
+    r = client.get("/")
+    assert "<script>alert(1)</script>" not in r.text
+    assert "&lt;script&gt;" in r.text
+
+
+def test_groupement_saga_dans_page():
+    database.init_db(":memory:")
+    database.add_book(Book("Tome 1", "Auteur", saga="Ma Saga", tome=1, possede=True))
+    database.add_book(Book("Tome 2", "Auteur", saga="Ma Saga", tome=2, possede=True))
+    from webapp import app
+    client = TestClient(app)
+    r = client.get("/")
+    assert r.text.count("Ma Saga") >= 1
+    assert "Tome 1" in r.text and "Tome 2" in r.text
+
+
 if __name__ == "__main__":
     test_health()
+    test_accueil_liste_possedes()
+    test_accueil_echappe_le_html()
+    test_groupement_saga_dans_page()
     print("OK : tests webapp passent.")

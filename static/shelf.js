@@ -1,97 +1,173 @@
-// Interaction de l'étagère — 100% côté client, lecture seule.
+// Étagère — navigation à 3 niveaux + livre animé. Lecture seule.
+// Niveau 0 : étagère (tranches sans titre). Clic saga -> niveau 1.
+// Niveau 1 : vue focalisée d'un groupe de saga (titres visibles). Clic livre -> niveau 2.
+// Niveau 2 : livre ouvert animé (couverture -> ouverture -> pages -> infos).
 
-// Déplier / replier une saga
-function basculerSaga(elNom) {
-  elNom.closest('.saga').classList.toggle('ouverte');
+const STATUTS = { non_lu: 'À lire', en_cours: 'En cours', lu: 'Lu' };
+
+// ---------- Niveau 0 -> 1 : focaliser un groupe de saga ----------
+function focaliser(saga) {
+  document.querySelectorAll('.saga.focalisee').forEach(s => s.classList.remove('focalisee'));
+  document.querySelectorAll('.auteur.auteur-focus').forEach(a => a.classList.remove('auteur-focus'));
+  saga.classList.add('focalisee');
+  const auteur = saga.closest('.auteur');
+  auteur.classList.add('auteur-focus');
+  document.body.classList.add('mode-focus');
+  const nom = (saga.dataset.saga && saga.dataset.saga !== 'Aucune')
+    ? saga.dataset.saga
+    : auteur.querySelector('.auteur-nom').textContent.trim();
+  document.getElementById('focus-nom').textContent = nom;
 }
 
-// Sélectionner un livre : pivoter de face (couverture), écarter les voisins, ouvrir le panneau
+// Appelé par l'en-tête de saga : onclick="basculerSaga(this)"
+function basculerSaga(elNom) {
+  focaliser(elNom.closest('.saga'));
+}
+
+function quitterFocus() {
+  fermerLivre();
+  document.body.classList.remove('mode-focus');
+  document.querySelectorAll('.saga.focalisee').forEach(s => s.classList.remove('focalisee'));
+  document.querySelectorAll('.auteur.auteur-focus').forEach(a => a.classList.remove('auteur-focus'));
+}
+
+// ---------- Niveau 1 -> 2 : ouvrir un livre ----------
+// Appelé par une tranche : onclick="choisirLivre(this)"
 function choisirLivre(el) {
-  document.querySelectorAll('.livre.selectionne, .livre.voisin-gauche, .livre.voisin-droite')
-    .forEach(l => l.classList.remove('selectionne', 'voisin-gauche', 'voisin-droite'));
+  // On impose de passer d'abord par la saga : hors mode focus, un clic sur une
+  // tranche focalise sa saga au lieu d'ouvrir directement le livre.
+  if (!document.body.classList.contains('mode-focus')) {
+    focaliser(el.closest('.saga'));
+    return;
+  }
+  ouvrirLivre(el);
+}
 
-  el.classList.add('selectionne');
-  const precedent = el.previousElementSibling;
-  const suivant = el.nextElementSibling;
-  if (precedent) precedent.classList.add('voisin-gauche');
-  if (suivant) suivant.classList.add('voisin-droite');
+function couvRepli(couv, titre) {
+  const s = document.createElement('span');
+  s.className = 'couv-repli';
+  s.textContent = titre;
+  couv.replaceChildren(s);
+}
 
-  const isbn = el.dataset.isbn;
-  const couv = document.getElementById('panneau-couverture');
-  const titre = el.dataset.titre;
-  if (isbn) {
-    const url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
-    couv.style.backgroundImage = `url("${url}")`;
-    couv.innerHTML = '';
-    const test = new Image();
-    test.referrerPolicy = 'no-referrer';
-    test.onerror = () => {
-      couv.style.backgroundImage = 'none';
-      couv.style.background = el.style.getPropertyValue('--c');
-      couv.replaceChildren();
-      const repli = document.createElement('span');
-      repli.className = 'repli';
-      repli.textContent = titre;
-      couv.appendChild(repli);
-    };
-    test.src = url;
-    el.style.backgroundImage = `url("${url}")`;
-  } else {
-    couv.style.backgroundImage = 'none';
-    couv.style.background = el.style.getPropertyValue('--c');
-    couv.replaceChildren();
-    const repli = document.createElement('span');
-    repli.className = 'repli';
-    repli.textContent = titre;
-    couv.appendChild(repli);
+function ajouterLigne(page, texte, classe) {
+  const p = document.createElement('p');
+  if (classe) p.className = classe;
+  p.textContent = texte;   // textContent : jamais d'injection HTML (SEC-W1)
+  page.appendChild(p);
+}
+
+function ouvrirLivre(el) {
+  const d = el.dataset;
+  const overlay = document.getElementById('livre-ouvert');
+  overlay.replaceChildren();
+
+  const livre = document.createElement('div');
+  livre.className = 'livre3d';
+
+  // Double page d'infos (état final, SOUS la couverture/les feuilles) — pas de couverture ici.
+  const spread = document.createElement('div');
+  spread.className = 'spread';
+
+  const gauche = document.createElement('div');
+  gauche.className = 'page page-gauche';
+  ajouterLigne(gauche, d.titre, 'titre-livre');
+  ajouterLigne(gauche, d.auteur + (d.annee ? ' · ' + d.annee : ''), 'sous');
+  if (d.saga && d.saga !== 'Aucune') {
+    ajouterLigne(gauche, 'Saga : ' + d.saga + (d.tome ? ' · Tome ' + d.tome : ''), '');
   }
 
-  const statuts = { non_lu: 'À lire', en_cours: 'En cours', lu: 'Lu' };
-  const d = el.dataset;
-  document.getElementById('p-titre').textContent = d.titre;
-  document.getElementById('p-auteur').textContent = d.auteur + (d.annee ? ' · ' + d.annee : '');
-  document.getElementById('p-saga').textContent =
-    d.saga && d.saga !== 'Aucune' ? `Saga : ${d.saga}` + (d.tome ? ` · Tome ${d.tome}` : '') : '';
-  document.getElementById('p-statut').textContent =
-    `Statut : ${statuts[d.statut] || d.statut}` + (d.possede === '1' ? ' · Possédé ✓' : '');
-  document.getElementById('p-note').textContent = d.note ? '★'.repeat(Number(d.note)) : '';
-  document.getElementById('p-commentaire').textContent = d.commentaire || '';
+  const droite = document.createElement('div');
+  droite.className = 'page page-droite';
+  ajouterLigne(droite, 'Statut : ' + (STATUTS[d.statut] || d.statut), '');
+  if (d.possede === '1') ajouterLigne(droite, 'Possédé ✓', '');
+  if (d.note) ajouterLigne(droite, '★'.repeat(Number(d.note)), 'note');
+  if (d.commentaire) ajouterLigne(droite, '« ' + d.commentaire + ' »', 'commentaire');
+  const crayon = document.createElement('button');
+  crayon.className = 'crayon';
+  crayon.disabled = true;
+  crayon.title = 'Modification — bientôt (Phase 3)';
+  crayon.textContent = '✏️';
+  droite.appendChild(crayon);
 
-  const panneau = document.getElementById('panneau');
-  panneau.classList.remove('ferme');
-  panneau.setAttribute('aria-hidden', 'false');
+  spread.appendChild(gauche);
+  spread.appendChild(droite);
+  livre.appendChild(spread);
+
+  // Feuilles décoratives qui défilent (au-dessus de la double page)
+  for (let i = 0; i < 4; i++) {
+    const f = document.createElement('div');
+    f.className = 'feuille';
+    f.style.setProperty('--i', i);
+    livre.appendChild(f);
+  }
+
+  // Couverture (étapes 1-2), au-dessus de tout : image OL ou couverture générée
+  const couv = document.createElement('div');
+  couv.className = 'couverture';
+  const url = d.isbn ? `https://covers.openlibrary.org/b/isbn/${d.isbn}-L.jpg` : '';
+  if (url) {
+    couv.style.backgroundImage = `url("${url}")`;
+    const img = new Image();
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => {
+      couv.style.backgroundImage = 'none';
+      couv.style.background = el.style.getPropertyValue('--c');
+      couvRepli(couv, d.titre);
+    };
+    img.src = url;
+  } else {
+    couv.style.background = el.style.getPropertyValue('--c');
+    couvRepli(couv, d.titre);
+  }
+  livre.appendChild(couv);
+
+  overlay.appendChild(livre);
+  overlay.classList.remove('cache');
+
+  // Démarre la séquence (les délais sont gérés en CSS via la classe 'demarre').
+  void livre.offsetWidth;  // force un reflow pour que la transition parte de l'état initial
+  livre.classList.add('demarre');
+
+  // Clic sur le fond = fermer ; clic sur le livre = sauter directement aux infos.
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      fermerLivre();
+    } else {
+      livre.classList.add('fini');
+    }
+  };
 }
 
-document.getElementById('panneau-fermer').addEventListener('click', () => {
-  const panneau = document.getElementById('panneau');
-  panneau.classList.add('ferme');
-  panneau.setAttribute('aria-hidden', 'true');
-  document.querySelectorAll('.livre.selectionne, .livre.voisin-gauche, .livre.voisin-droite')
-    .forEach(l => { l.classList.remove('selectionne', 'voisin-gauche', 'voisin-droite'); l.style.backgroundImage = 'none'; });
-});
+function fermerLivre() {
+  const overlay = document.getElementById('livre-ouvert');
+  overlay.classList.add('cache');
+  overlay.replaceChildren();
+  overlay.onclick = null;
+}
 
+// ---------- Recherche + filtre statut (niveau 0) ----------
 let filtreStatut = '';
 function appliquerFiltres() {
   const q = document.getElementById('recherche').value.trim().toLowerCase();
   document.querySelectorAll('.livre').forEach(livre => {
     const d = livre.dataset;
-    const correspondTexte = !q ||
+    const okTexte = !q ||
       d.titre.toLowerCase().includes(q) ||
       d.auteur.toLowerCase().includes(q) ||
       (d.saga || '').toLowerCase().includes(q);
-    const correspondStatut = !filtreStatut || d.statut === filtreStatut;
-    livre.classList.toggle('masque', !(correspondTexte && correspondStatut));
+    const okStatut = !filtreStatut || d.statut === filtreStatut;
+    livre.classList.toggle('masque', !(okTexte && okStatut));
   });
   document.querySelectorAll('.saga').forEach(s => {
-    const visibles = s.querySelectorAll('.livre:not(.masque)').length;
-    s.style.display = visibles ? '' : 'none';
+    s.style.display = s.querySelectorAll('.livre:not(.masque)').length ? '' : 'none';
   });
   document.querySelectorAll('.auteur').forEach(a => {
-    const visibles = a.querySelectorAll('.livre:not(.masque)').length;
-    a.style.display = visibles ? '' : 'none';
+    a.style.display = a.querySelectorAll('.livre:not(.masque)').length ? '' : 'none';
   });
 }
 
+// ---------- Câblage ----------
 document.getElementById('recherche').addEventListener('input', appliquerFiltres);
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -101,3 +177,4 @@ document.querySelectorAll('.chip').forEach(chip => {
     appliquerFiltres();
   });
 });
+document.getElementById('btn-retour').addEventListener('click', quitterFocus);

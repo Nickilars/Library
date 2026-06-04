@@ -41,6 +41,16 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/wishlist", response_class=HTMLResponse)
+def wishlist(request: Request):
+    souhaits = [b for b in database.get_all_books() if b.wishlist]
+    return templates.TemplateResponse(request, "wishlist.html", {
+        "groupes": grouper_livres(souhaits),
+        "couleur": couleur_tranche,
+        "message_vide": "Votre wishlist est vide.",
+    })
+
+
 if __name__ == "__main__":
     import uvicorn
     host = os.environ.get("LIBRARY_HOST", "127.0.0.1")

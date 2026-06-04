@@ -56,9 +56,18 @@ def test_groupement_saga_dans_page():
     assert "Tome 1" in r.text and "Tome 2" in r.text
 
 
+def test_wishlist():
+    client = _client_avec_donnees()
+    r = client.get("/wishlist")
+    assert r.status_code == 200
+    assert "À acheter" in r.text          # le livre wishlist
+    assert "Le Hobbit" not in r.text      # un possédé non-wishlist n'y est pas
+
+
 if __name__ == "__main__":
     test_health()
     test_accueil_liste_possedes()
     test_accueil_echappe_le_html()
     test_groupement_saga_dans_page()
+    test_wishlist()
     print("OK : tests webapp passent.")

@@ -90,6 +90,26 @@ def test_injection_sql_inoffensive():
     assert livres[0].titre == piege  # stocké tel quel, table intacte
 
 
+def test_update():
+    database.init_db(":memory:")
+    bid = database.add_book(Book("Dune", "Herbert", statut_lecture="non_lu"))
+    b = database.get_book(bid)
+    b.statut_lecture = "lu"
+    b.note = 5
+    database.update_book(b)
+    relu = database.get_book(bid)
+    assert relu.statut_lecture == "lu"
+    assert relu.note == 5
+
+
+def test_delete():
+    database.init_db(":memory:")
+    bid = database.add_book(Book("Dune", "Herbert"))
+    database.delete_book(bid)
+    assert database.get_book(bid) is None
+    assert database.get_all_books() == []
+
+
 if __name__ == "__main__":
     test_init_cree_table_vide()
     test_validation_note_hors_domaine()
@@ -101,4 +121,6 @@ if __name__ == "__main__":
     test_get_book_inexistant()
     test_deux_livres_meme_titre()
     test_injection_sql_inoffensive()
+    test_update()
+    test_delete()
     print("OK : tests database (init) passent.")

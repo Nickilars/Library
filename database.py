@@ -152,3 +152,29 @@ def add_book(book: Book) -> int:
 def get_book(book_id: int) -> "Book | None":
     row = _get_conn().execute("SELECT * FROM books WHERE id = ?", (book_id,)).fetchone()
     return _book_from_row(row) if row else None
+
+
+def update_book(book: Book) -> None:
+    """Valide puis met à jour le livre identifié par book.id."""
+    if book.id is None:
+        raise ValueError("update_book nécessite un id.")
+    valide = valider_book(book)
+    conn = _get_conn()
+    conn.execute(
+        """UPDATE books SET
+             titre=?, auteur=?, annee_publication=?, isbn=?, saga=?, tome=?,
+             statut_lecture=?, possede=?, wishlist=?, note=?, commentaire=?,
+             date_ajout=?, date_lecture=?
+           WHERE id=?""",
+        (valide.titre, valide.auteur, valide.annee_publication, valide.isbn,
+         valide.saga, valide.tome, valide.statut_lecture, int(valide.possede),
+         int(valide.wishlist), valide.note, valide.commentaire,
+         book.date_ajout, valide.date_lecture, book.id),
+    )
+    conn.commit()
+
+
+def delete_book(book_id: int) -> None:
+    conn = _get_conn()
+    conn.execute("DELETE FROM books WHERE id = ?", (book_id,))
+    conn.commit()

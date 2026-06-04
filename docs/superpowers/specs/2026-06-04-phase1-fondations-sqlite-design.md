@@ -141,9 +141,53 @@ contient déjà des livres (évite les doublons en cas de double lancement).
 - **Migration** : si `inventory.json` est absent → créer une base vide (cas premier
   lancement). Si corrompu → message explicite, ne rien écrire.
 - **Contraintes** : `titre`/`auteur` vides refusés au niveau de la saisie (déjà le cas).
-- Le SQL utilise des **requêtes paramétrées** (`?`) systématiquement — jamais de
-  concaténation de chaînes — pour la correction et par bonne habitude de sécurité
-  (prépare l'entrée web de la Phase 2).
+- Le SQL utilise des **requêtes paramétrées** (`?`) systématiquement (voir SEC-1).
+- Les exceptions sont gérées explicitement, jamais avalées silencieusement (voir SEC-5).
+
+## Exigences de sécurité
+
+L'application sera à terme hébergée et exposée à internet. Même destinée à un seul
+utilisateur, elle sera scannée en continu par des bots automatiques : l'authentification
+et l'exposition des données sont de vraies cibles. La sécurité est donc conçue dès le
+départ (« secure by design »), avec une **modélisation des menaces à chaque phase** :
+
+| Phase | Risques principaux | Parades |
+|---|---|---|
+| **1 — Fondations** | Injection SQL, validation des entrées, fichier BDD lisible, dépendances vulnérables | Requêtes paramétrées, validation centralisée, permissions fichier, audit des dépendances |
+| 2 — Web local | XSS, CSRF | Échappement auto des templates, jetons CSRF |
+| 3 — Auth | Mots de passe en clair, brute-force, vol de session | Hachage argon2/bcrypt, limitation de tentatives, cookies sécurisés |
+| 4 — Hébergement | Exposition internet, secrets en clair, transport | HTTPS obligatoire, secrets via variables d'environnement, en-têtes de sécurité |
+| 5 — Scan mobile | Permissions caméra | HTTPS (requis pour la caméra), périmètre minimal |
+
+### Exigences SEC de la Phase 1
+
+- **SEC-1 — Requêtes paramétrées.** Toute requête SQL utilise des paramètres liés (`?`),
+  jamais de concaténation de chaînes. Protège contre l'injection SQL et prépare l'entrée
+  web de la Phase 2. *Testable : une valeur contenant `'; DROP TABLE books;--` est traitée
+  comme une donnée littérale, sans effet.*
+- **SEC-2 — Validation centralisée des entrées.** Avant insertion/mise à jour, les données
+  sont validées et normalisées en un point unique : longueurs maximales sur les champs
+  texte, `note` ∈ 0–5 (ou nul), `statut_lecture` ∈ {`non_lu`, `en_cours`, `lu`},
+  `isbn` = 13 chiffres (ou vide), booléens stricts. Défense en profondeur : complète
+  SEC-1 en garantissant la cohérence *métier* des données, pas seulement la syntaxe SQL.
+- **SEC-3 — Protection du fichier de base.** `library.db` est créé avec des permissions
+  restreintes (lecture/écriture propriétaire uniquement). Il figure dans `.gitignore` et
+  n'est jamais commité (il contient les habitudes de lecture de l'utilisateur).
+- **SEC-4 — Pas de secret ni de chemin en dur.** Aucune donnée sensible ni chemin absolu
+  codé en dur ; le chemin de la base est configurable (paramètre / variable
+  d'environnement), avec une valeur par défaut relative.
+- **SEC-5 — Gestion explicite des erreurs.** Aucune exception avalée silencieusement
+  (le `except: pass` du scanner avait masqué un bug réel). Les erreurs de base sont
+  journalisées de façon exploitable, sans exposer de détails internes à l'utilisateur.
+- **SEC-6 — Hygiène des dépendances.** Versions épinglées dans `requirements.txt` ; audit
+  de vulnérabilités possible via `pip-audit`.
+
+### Tests de sécurité
+
+Les exigences testables sont couvertes par la suite de tests :
+- SEC-1 : tentative d'injection via une valeur piégée → aucune altération de la base.
+- SEC-2 : valeurs hors domaine (`note=9`, `statut_lecture="invalide"`, ISBN non
+  numérique) → rejetées ou normalisées, jamais insérées telles quelles.
 
 ## Tests
 
@@ -175,3 +219,5 @@ Couverture visée :
 - Deux livres homonymes peuvent coexister.
 - Les données sont persistées immédiatement à chaque opération.
 - La suite de tests de `database.py` et de la migration passe au vert.
+- Les exigences de sécurité SEC-1 à SEC-6 sont satisfaites (SEC-1 et SEC-2 vérifiées par
+  des tests dédiés).

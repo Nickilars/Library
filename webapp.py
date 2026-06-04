@@ -27,7 +27,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def accueil(request: Request):
+def accueil(request: Request):
     possedes = [b for b in database.get_all_books() if b.possede]
     return templates.TemplateResponse(request, "shelf.html", {
         "groupes": grouper_livres(possedes),

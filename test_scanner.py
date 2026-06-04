@@ -68,6 +68,7 @@ assert infos["titre"] == "Le vaisseau magique"
 assert infos["auteur"] == "Robin Hobb"
 assert infos["annee"] == "2025"
 assert infos["saga"] == "Les aventuriers de la mer"   # via le champ 461
+assert infos["tome"] == 1   # via 461$v
 
 # Sans champ 461 : repli sur le 225 qui n'est PAS la collection de l'éditeur
 NOTICE_SANS_461 = """<racine>
@@ -91,6 +92,7 @@ assert infos["titre"] == "Roman isolé"
 assert infos["auteur"] == "Albert Camus"
 assert infos["annee"] == "1999"
 assert infos["saga"] == "Aucune"
+assert infos["tome"] is None
 
 # Notice sans titre (livre absent du catalogue) : None
 assert parser_notice_unimarc("<racine></racine>") is None

@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Base de données locale — contient les données personnelles (SEC-3)
+library.db
+*.db

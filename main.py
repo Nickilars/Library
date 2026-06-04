@@ -5,7 +5,7 @@
 
 import os
 import time
-import file
+import database
 import scanner
 from book import Book
 from library import Library
@@ -17,7 +17,8 @@ console = Console()
 
 if __name__ == "__main__":
 
-    library = file.load_library()
+    database.init_db()
+    library = Library()
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -53,6 +54,7 @@ if __name__ == "__main__":
                 ).execute()
 
                 titre, auteur, annee_publication, saga = "", "", "", "Aucune"
+                isbn, tome = "", None
                 continuer_ajout = True
 
                 if mode_ajout == "scan":
@@ -77,6 +79,8 @@ if __name__ == "__main__":
                                 saga = input(f"Nom de la saga (Entrée pour garder '{saga_trouvee}') : ").strip() or saga_trouvee
                             else:
                                 saga = input("Nom de la saga (Laissez vide si aucune) : ").strip() or "Aucune"
+                            # On récupère aussi le tome détecté (BnF), s'il existe
+                            tome = infos_internet.get('tome')
                         else:
                             console.print("\n[bold red]❌ Impossible de trouver ce livre sur internet.[/bold red]")
                             input("Appuyez sur Entrée pour basculer en saisie manuelle...")
@@ -97,18 +101,19 @@ if __name__ == "__main__":
 
                 # Étape finale commune : statuts de possession et de lecture
                 if continuer_ajout:
-                    posseder = inquirer.select(
-                        message=f"Le possédez-vous ({titre}) ?",
-                        choices=[{"name": "Oui", "value": True}, {"name": "Non", "value": False}]
-                    ).execute()
-                    
-                    deja_lu = inquirer.select(
-                        message=f"L'avez-vous déjà lu ?",
-                        choices=[{"name": "Oui", "value": True}, {"name": "Non", "value": False}]
-                    ).execute()
-                    
-                    # Création et ajout final du livre (arguments nommés pour éviter toute inversion)
-                    book = Book(titre, auteur, annee_publication, saga=saga, posseder=posseder, deja_lu=deja_lu)
+                    statut = inquirer.select(
+                        message=f"Statut de lecture pour « {titre} » ?",
+                        choices=[{"name": "À lire", "value": "non_lu"},
+                                 {"name": "En cours", "value": "en_cours"},
+                                 {"name": "Lu", "value": "lu"}]).execute()
+                    possede = inquirer.select(
+                        message="Le possédez-vous ?",
+                        choices=[{"name": "Oui", "value": True},
+                                 {"name": "Non", "value": False}]).execute()
+
+                    book = Book(titre, auteur, annee_publication, saga=saga,
+                                isbn=isbn, tome=tome,
+                                statut_lecture=statut, possede=possede)
                     library.add_book(book)
                     time.sleep(2.5)
                 
@@ -119,32 +124,30 @@ if __name__ == "__main__":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "3":
-                print("Rechercher par titre (a), par saga (b), par auteur (c), par livre possédé (d) ou par livre lu (e) ?")
-                order = input("Choisissez une option: ").strip().lower()
-                
-                match order:
-                    case "a":
-                        titre = input("Titre du livre à rechercher : ")
-                        book = Book(titre, "", "")
-                        library.search_book(book)
-                    case "b":
-                        saga = input("Saga à rechercher : ")
-                        book = Book("", "", "", saga=saga)
-                        library.search_book(book)
-                    case "c":
-                        auteur = input("Auteur du livre à rechercher : ")
-                        book = Book("", auteur, "")
-                        library.search_book(book)
-                    case "d":
-                        book = Book("", "", "", posseder=True)
-                        library.search_book(book)
-                    case "e":
-                        book = Book("", "", "", deja_lu=True)
-                        library.search_book(book)
-                    case _:
-                        console.print("[bold red]Option invalide, aucune recherche effectuée.[/bold red]")
-                        
-                time.sleep(4)
+                os.system('cls' if os.name == 'nt' else 'clear')
+                critere = inquirer.select(
+                    message="Rechercher par :",
+                    choices=[{"name": "Titre", "value": "titre"},
+                             {"name": "Auteur", "value": "auteur"},
+                             {"name": "Saga", "value": "saga"},
+                             {"name": "Statut de lecture", "value": "statut"}],
+                    pointer="👉").execute()
+
+                if critere == "titre":
+                    library.search_book(titre=input("Titre : ").strip())
+                elif critere == "auteur":
+                    library.search_book(auteur=input("Auteur : ").strip())
+                elif critere == "saga":
+                    library.search_book(saga=input("Saga : ").strip())
+                elif critere == "statut":
+                    statut = inquirer.select(
+                        message="Quel statut ?",
+                        choices=[{"name": "À lire", "value": "non_lu"},
+                                 {"name": "En cours", "value": "en_cours"},
+                                 {"name": "Lu", "value": "lu"}]).execute()
+                    library.search_book(statut_lecture=statut)
+
+                input("\nAppuyez sur Entrée pour revenir au menu...")
                 os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "4":
@@ -159,10 +162,9 @@ if __name__ == "__main__":
                 os.system('cls' if os.name == 'nt' else 'clear')
                 
             case "6":
-                file.save_library(library)
                 os.system('cls' if os.name == 'nt' else 'clear')
                 console.print("[bold yellow]Au revoir ![/bold yellow]")
-                time.sleep(2)
+                time.sleep(1.5)
                 os.system('cls' if os.name == 'nt' else 'clear')
                 break
                 

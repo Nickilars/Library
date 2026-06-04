@@ -100,7 +100,7 @@ def interroger_open_library(isbn: str) -> dict:
                 "annee": annee,
                 "saga": "Aucune"
             }
-    except Exception:
+    except (requests.exceptions.RequestException, ValueError):
         pass
     return None
 
@@ -157,11 +157,16 @@ def parser_notice_unimarc(xml_texte: str) -> dict:
             if saga:
                 break
 
+    # Tome : numéro de volume dans la série, champ 461$v (ex : "1").
+    tome_brut = premier("461", "v")
+    tome = int(tome_brut) if tome_brut.isdigit() else None
+
     return {
         "titre": titre,
         "auteur": auteur,
         "annee": annee,
-        "saga": saga or "Aucune"
+        "saga": saga or "Aucune",
+        "tome": tome
     }
 
 
@@ -179,6 +184,6 @@ def interroger_bnf(isbn: str) -> dict:
     try:
         response = requests.get(url, params=params, timeout=10)
         return parser_notice_unimarc(response.text)
-    except Exception:
+    except requests.exceptions.RequestException:
         pass
     return None

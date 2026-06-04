@@ -1,8 +1,21 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class Book:
-    def __init__(self, titre, auteur, annee_publication, *, saga="Aucune", posseder=False, deja_lu=False):
-        self.titre = titre
-        self.auteur = auteur
-        self.saga = saga
-        self.annee_publication = annee_publication
-        self.posseder = posseder
-        self.deja_lu = deja_lu
+    """Un livre de la bibliothèque. Les booléens sont stockés en 0/1 dans SQLite ;
+    statut_lecture vaut 'non_lu', 'en_cours' ou 'lu'."""
+    titre: str
+    auteur: str
+    annee_publication: str = ""
+    isbn: str = ""
+    saga: str = "Aucune"
+    tome: "int | None" = None
+    statut_lecture: str = "non_lu"
+    possede: bool = False
+    wishlist: bool = False
+    note: "int | None" = None
+    commentaire: str = ""
+    date_ajout: str = ""
+    date_lecture: "str | None" = None
+    id: "int | None" = None

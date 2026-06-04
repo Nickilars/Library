@@ -42,7 +42,7 @@ def init_db(db_path: str = DEFAULT_PATH) -> None:
 
     fichier_neuf = db_path != ":memory:" and not os.path.exists(db_path)
 
-    _conn = sqlite3.connect(db_path)
+    _conn = sqlite3.connect(db_path, check_same_thread=False)
     _conn.row_factory = sqlite3.Row  # accès colonne par nom (row["titre"])
     _conn.execute("PRAGMA foreign_keys = ON")
     _conn.executescript(SCHEMA)
@@ -62,6 +62,11 @@ def _get_conn() -> sqlite3.Connection:
     if _conn is None:
         raise RuntimeError("Base non initialisée : appelez init_db() d'abord.")
     return _conn
+
+
+def is_initialized() -> bool:
+    """True si la connexion a déjà été ouverte par init_db (utile au démarrage web)."""
+    return _conn is not None
 
 
 def valider_book(book: Book) -> Book:

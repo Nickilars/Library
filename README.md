@@ -32,6 +32,35 @@ python main.py
 
 ---
 
+## 🌐 Application web (consultation)
+
+En plus de la console, une interface web permet de **consulter** la collection sous forme d'étagère (lecture seule) : livres en tranches debout, groupés par auteur puis saga, qu'on déplie pour faire pivoter un livre de face.
+
+### Lancer le serveur
+```bash
+python webapp.py
+```
+Puis ouvrir http://127.0.0.1:8000 dans un navigateur.
+
+### Accès depuis un autre appareil du réseau local
+Par défaut le serveur n'écoute que sur la machine locale. Pour y accéder depuis un autre ordinateur de la maison, définissez l'hôte avant de lancer :
+```bash
+# PowerShell
+$env:LIBRARY_HOST = "0.0.0.0"; python webapp.py
+```
+puis ouvrez `http://<ip-du-serveur>:8000` depuis l'autre appareil.
+
+Variables d'environnement : `LIBRARY_HOST` (défaut `127.0.0.1`), `LIBRARY_PORT` (défaut `8000`), `LIBRARY_DB` (défaut `library.db`).
+
+> ⚠️ L'application web est en **lecture seule** : les ajouts et modifications se font dans la console. L'écriture depuis le web, l'authentification et l'accès depuis internet viendront dans les phases suivantes.
+
+### API JSON (lecture seule)
+- `GET /api/books` — livres possédés
+- `GET /api/books/{id}` — un livre
+- `GET /api/wishlist` — livres à acheter
+
+---
+
 ## 💾 Données
 
 Les livres sont stockés dans une base de données SQLite locale (`library.db`), écrite à chaque opération : aucune perte de données en cas de fermeture inattendue.

@@ -5,3 +5,6 @@ __pycache__/
 # Base de données locale — contient les données personnelles (SEC-3)
 library.db
 *.db
+
+# Maquettes du compagnon visuel de brainstorming
+.superpowers/

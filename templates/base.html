@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- SEC-W4 : ne fuiter aucun référent vers covers.openlibrary.org (couvre aussi les background-image) -->
+  <meta name="referrer" content="no-referrer">
+  <title>{% block titre %}Ma bibliothèque{% endblock %}</title>
+  <link rel="stylesheet" href="/static/shelf.css">
+</head>
+<body>
+  <header class="entete">
+    <h1>📚 Ma bibliothèque</h1>
+    <nav>
+      <a href="/">Collection</a>
+      <a href="/wishlist">Wishlist</a>
+    </nav>
+    <div class="controles">
+      <input id="recherche" type="search" placeholder="Rechercher titre, auteur, saga…">
+      <div class="filtres">
+        <button class="chip actif" data-statut="">Tous</button>
+        <button class="chip" data-statut="non_lu">À lire</button>
+        <button class="chip" data-statut="en_cours">En cours</button>
+        <button class="chip" data-statut="lu">Lu</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="etagere">
+    {% block contenu %}{% endblock %}
+  </main>
+
+  <aside id="panneau" class="panneau ferme" aria-hidden="true">
+    <button id="panneau-fermer" class="panneau-fermer" title="Fermer">✕</button>
+    <div id="panneau-couverture" class="panneau-couverture"></div>
+    <div class="panneau-infos">
+      <div class="panneau-titre-ligne">
+        <h2 id="p-titre"></h2>
+        <button id="p-modifier" class="crayon" disabled title="Modification — bientôt (Phase 3)">✏️</button>
+      </div>
+      <p id="p-auteur" class="p-auteur"></p>
+      <p id="p-saga"></p>
+      <p id="p-statut"></p>
+      <p id="p-note"></p>
+      <p id="p-commentaire" class="p-commentaire"></p>
+    </div>
+  </aside>
+
+  <script src="/static/shelf.js"></script>
+</body>
+</html>

@@ -110,6 +110,38 @@ def test_delete():
     assert database.get_all_books() == []
 
 
+def _jeu_de_test():
+    database.init_db(":memory:")
+    database.add_book(Book("Dune", "Frank Herbert", saga="Dune", statut_lecture="lu"))
+    database.add_book(Book("1984", "George Orwell", statut_lecture="non_lu"))
+    database.add_book(Book("Les Messies de Dune", "Frank Herbert", saga="Dune",
+                           statut_lecture="en_cours"))
+
+
+def test_search_par_titre():
+    _jeu_de_test()
+    res = database.search_books(titre="dune")
+    assert {b.titre for b in res} == {"Dune", "Les Messies de Dune"}
+
+
+def test_search_par_auteur():
+    _jeu_de_test()
+    res = database.search_books(auteur="orwell")
+    assert len(res) == 1 and res[0].titre == "1984"
+
+
+def test_search_par_saga():
+    _jeu_de_test()
+    res = database.search_books(saga="Dune")
+    assert len(res) == 2
+
+
+def test_search_par_statut():
+    _jeu_de_test()
+    res = database.search_books(statut_lecture="lu")
+    assert len(res) == 1 and res[0].titre == "Dune"
+
+
 if __name__ == "__main__":
     test_init_cree_table_vide()
     test_validation_note_hors_domaine()
@@ -123,4 +155,8 @@ if __name__ == "__main__":
     test_injection_sql_inoffensive()
     test_update()
     test_delete()
+    test_search_par_titre()
+    test_search_par_auteur()
+    test_search_par_saga()
+    test_search_par_statut()
     print("OK : tests database (init) passent.")

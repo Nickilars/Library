@@ -178,3 +178,31 @@ def delete_book(book_id: int) -> None:
     conn = _get_conn()
     conn.execute("DELETE FROM books WHERE id = ?", (book_id,))
     conn.commit()
+
+
+def search_books(titre: str = "", auteur: str = "", saga: str = "",
+                 statut_lecture: str = "") -> list:
+    """Recherche par critères combinables (ET). Les champs texte sont en sous-chaîne
+    insensible à la casse. Critères vides = ignorés. Requête entièrement paramétrée (SEC-1)."""
+    clauses = []
+    params = []
+    if titre.strip():
+        clauses.append("titre LIKE ? COLLATE NOCASE")
+        params.append(f"%{titre.strip()}%")
+    if auteur.strip():
+        clauses.append("auteur LIKE ? COLLATE NOCASE")
+        params.append(f"%{auteur.strip()}%")
+    if saga.strip():
+        clauses.append("saga LIKE ? COLLATE NOCASE")
+        params.append(f"%{saga.strip()}%")
+    if statut_lecture.strip():
+        clauses.append("statut_lecture = ?")
+        params.append(statut_lecture.strip())
+
+    sql = "SELECT * FROM books"
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY titre COLLATE NOCASE"
+
+    rows = _get_conn().execute(sql, params).fetchall()
+    return [_book_from_row(r) for r in rows]

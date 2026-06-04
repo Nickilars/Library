@@ -172,6 +172,13 @@ L'interaction visuelle (pivot, dépliage, panneau) relève du JS/CSS et se véri
 saga, pivoter un livre, ouvrir le panneau, lancer une recherche, appliquer un filtre,
 ouvrir la wishlist).
 
+## Évolutions visuelles futures (hors périmètre Phase 2)
+
+Intention notée pour une itération ultérieure (à ne pas implémenter maintenant) :
+rendre l'**étagère et l'arrière-plan plus réalistes** (texture bois, ombres portées,
+profondeur, éclairage). La Phase 2 livre d'abord l'étagère fonctionnelle et stylisée
+décrite ci-dessus ; le polish visuel réaliste viendra dans une passe dédiée.
+
 ## Critères de succès
 
 - L'étagère affiche la collection possédée, groupée auteur → saga → tome, avec tranches

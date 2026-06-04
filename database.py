@@ -1,0 +1,86 @@
+#! /usr/bin/env python3
+# Couche d'accès aux données (DAL). Encapsule tout le SQL : le reste du code
+# n'appelle que ces fonctions, jamais sqlite3 directement.
+import os
+import stat
+import sqlite3
+from book import Book
+
+DEFAULT_PATH = "library.db"
+
+# Connexion unique du processus, initialisée par init_db().
+_conn = None
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS books (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    titre             TEXT NOT NULL,
+    auteur            TEXT NOT NULL,
+    annee_publication TEXT DEFAULT '',
+    isbn              TEXT DEFAULT '',
+    saga              TEXT DEFAULT 'Aucune',
+    tome              INTEGER,
+    statut_lecture    TEXT DEFAULT 'non_lu',
+    possede           INTEGER DEFAULT 0,
+    wishlist          INTEGER DEFAULT 0,
+    note              INTEGER,
+    commentaire       TEXT DEFAULT '',
+    date_ajout        TEXT NOT NULL,
+    date_lecture      TEXT
+);
+"""
+
+
+def init_db(db_path: str = DEFAULT_PATH) -> None:
+    """Ouvre (ou crée) la base et garantit que la table existe.
+    Réinitialise la connexion du module — utilisé aussi par les tests avec ':memory:'."""
+    global _conn
+
+    fichier_neuf = db_path != ":memory:" and not os.path.exists(db_path)
+
+    _conn = sqlite3.connect(db_path)
+    _conn.row_factory = sqlite3.Row  # accès colonne par nom (row["titre"])
+    _conn.execute("PRAGMA foreign_keys = ON")
+    _conn.executescript(SCHEMA)
+    _conn.commit()
+
+    # SEC-3 : restreindre l'accès au fichier dès sa création (propriétaire seul).
+    # Sur Windows, chmod ne gère que le bit lecture seule ; l'appel reste sans danger
+    # et correct sur les systèmes POSIX (futur hébergement Linux).
+    if fichier_neuf:
+        try:
+            os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            pass
+
+
+def _get_conn() -> sqlite3.Connection:
+    if _conn is None:
+        raise RuntimeError("Base non initialisée : appelez init_db() d'abord.")
+    return _conn
+
+
+def _book_from_row(row: sqlite3.Row) -> Book:
+    """Convertit une ligne SQLite en objet Book (0/1 -> booléens)."""
+    return Book(
+        titre=row["titre"],
+        auteur=row["auteur"],
+        annee_publication=row["annee_publication"],
+        isbn=row["isbn"],
+        saga=row["saga"],
+        tome=row["tome"],
+        statut_lecture=row["statut_lecture"],
+        possede=bool(row["possede"]),
+        wishlist=bool(row["wishlist"]),
+        note=row["note"],
+        commentaire=row["commentaire"],
+        date_ajout=row["date_ajout"],
+        date_lecture=row["date_lecture"],
+        id=row["id"],
+    )
+
+
+def get_all_books() -> list:
+    """Retourne tous les livres, triés par titre."""
+    rows = _get_conn().execute("SELECT * FROM books ORDER BY titre COLLATE NOCASE").fetchall()
+    return [_book_from_row(r) for r in rows]

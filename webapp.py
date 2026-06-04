@@ -4,7 +4,8 @@
 # Hôte/port/chemin base configurables par variables d'environnement.
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from dataclasses import asdict
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -49,6 +50,24 @@ def wishlist(request: Request):
         "couleur": couleur_tranche,
         "message_vide": "Votre wishlist est vide.",
     })
+
+
+@app.get("/api/books")
+def api_books():
+    return [asdict(b) for b in database.get_all_books() if b.possede]
+
+
+@app.get("/api/books/{book_id}")
+def api_book(book_id: int):
+    livre = database.get_book(book_id)
+    if livre is None:
+        raise HTTPException(status_code=404, detail="Livre introuvable")
+    return asdict(livre)
+
+
+@app.get("/api/wishlist")
+def api_wishlist():
+    return [asdict(b) for b in database.get_all_books() if b.wishlist]
 
 
 if __name__ == "__main__":

@@ -64,10 +64,46 @@ def test_wishlist():
     assert "Le Hobbit" not in r.text      # un possédé non-wishlist n'y est pas
 
 
+def test_api_books():
+    client = _client_avec_donnees()
+    r = client.get("/api/books")
+    assert r.status_code == 200
+    data = r.json()
+    titres = {b["titre"] for b in data}
+    assert "Dune" in titres and "Le Hobbit" in titres
+    assert "À acheter" not in titres          # API /books = possédés
+
+
+def test_api_book_par_id():
+    client = _client_avec_donnees()
+    r = client.get("/api/books/1")
+    assert r.status_code == 200
+    assert r.json()["titre"] == "Dune"
+    assert r.json()["id"] == 1
+
+
+def test_api_book_inexistant():
+    client = _client_avec_donnees()
+    r = client.get("/api/books/999")
+    assert r.status_code == 404
+
+
+def test_api_wishlist():
+    client = _client_avec_donnees()
+    r = client.get("/api/wishlist")
+    assert r.status_code == 200
+    titres = {b["titre"] for b in r.json()}
+    assert titres == {"À acheter"}
+
+
 if __name__ == "__main__":
     test_health()
     test_accueil_liste_possedes()
     test_accueil_echappe_le_html()
     test_groupement_saga_dans_page()
     test_wishlist()
+    test_api_books()
+    test_api_book_par_id()
+    test_api_book_inexistant()
+    test_api_wishlist()
     print("OK : tests webapp passent.")

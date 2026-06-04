@@ -96,7 +96,9 @@ function appliquerCouverture(d) {
   const isbn = (d.isbn || '').trim();
   if (isbn) {
     const url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
-    new THREE.TextureLoader().load(
+    const chargeur = new THREE.TextureLoader();
+    chargeur.crossOrigin = 'anonymous';
+    chargeur.load(
       url,
       tex => { tex.anisotropy = 4; matCouv.map = tex; matCouv.color.set(0xffffff); matCouv.needsUpdate = true; },
       undefined,
@@ -123,6 +125,7 @@ export function ouvrir(conteneur, d) {
 
 export function fermer() {
   actif = false;
+  drag = false;
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   if (renderer && renderer.domElement.parentNode) {
     renderer.domElement.parentNode.removeChild(renderer.domElement);

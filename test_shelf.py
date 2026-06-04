@@ -45,10 +45,23 @@ def test_groupement_vide():
     assert grouper_livres([]) == []
 
 
+def test_groupement_insensible_casse():
+    # Même auteur/saga avec une casse différente -> un seul groupe, pas deux.
+    livres = [
+        Book("Tome 1", "Tolkien", saga="Le Seigneur des anneaux", tome=1, possede=True),
+        Book("Tome 2", "tolkien", saga="le seigneur des anneaux", tome=2, possede=True),
+    ]
+    groupes = grouper_livres(livres)
+    assert len(groupes) == 1, f"attendu 1 auteur, obtenu {len(groupes)}"
+    assert len(groupes[0]["sagas"]) == 1, "attendu 1 saga"
+    assert len(groupes[0]["sagas"][0]["livres"]) == 2
+
+
 if __name__ == "__main__":
     test_couleur_deterministe()
     test_couleur_format_hex()
     test_couleurs_differentes_selon_livre()
     test_groupement_structure()
     test_groupement_vide()
+    test_groupement_insensible_casse()
     print("OK : tests couleur_tranche passent.")

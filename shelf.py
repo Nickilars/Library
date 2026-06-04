@@ -48,10 +48,10 @@ def grouper_livres(livres: list) -> list:
     ))
     groupes = []
     for b in livres_tries:
-        if not groupes or groupes[-1]["auteur"] != b.auteur:
+        if not groupes or groupes[-1]["auteur"].casefold() != b.auteur.casefold():
             groupes.append({"auteur": b.auteur, "sagas": []})
         sagas = groupes[-1]["sagas"]
-        if not sagas or sagas[-1]["nom"] != b.saga:
+        if not sagas or sagas[-1]["nom"].casefold() != b.saga.casefold():
             sagas.append({"nom": b.saga, "livres": []})
         sagas[-1]["livres"].append(b)
     return groupes

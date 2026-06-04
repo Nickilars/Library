@@ -142,6 +142,26 @@ def test_search_par_statut():
     assert len(res) == 1 and res[0].titre == "Dune"
 
 
+def test_doublon_par_isbn():
+    database.init_db(":memory:")
+    database.add_book(Book("Dune", "Herbert", isbn="9782070360024"))
+    trouve = database.trouver_doublon(isbn="9782070360024", titre="Autre", auteur="X")
+    assert trouve is not None and trouve.titre == "Dune"
+
+
+def test_doublon_par_titre_auteur_insensible_casse():
+    database.init_db(":memory:")
+    database.add_book(Book("Dune", "Frank Herbert"))
+    trouve = database.trouver_doublon(isbn="", titre="DUNE", auteur="frank herbert")
+    assert trouve is not None
+
+
+def test_pas_de_doublon():
+    database.init_db(":memory:")
+    database.add_book(Book("Dune", "Herbert"))
+    assert database.trouver_doublon(isbn="", titre="1984", auteur="Orwell") is None
+
+
 if __name__ == "__main__":
     test_init_cree_table_vide()
     test_validation_note_hors_domaine()
@@ -159,4 +179,7 @@ if __name__ == "__main__":
     test_search_par_auteur()
     test_search_par_saga()
     test_search_par_statut()
+    test_doublon_par_isbn()
+    test_doublon_par_titre_auteur_insensible_casse()
+    test_pas_de_doublon()
     print("OK : tests database (init) passent.")

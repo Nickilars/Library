@@ -206,3 +206,21 @@ def search_books(titre: str = "", auteur: str = "", saga: str = "",
 
     rows = _get_conn().execute(sql, params).fetchall()
     return [_book_from_row(r) for r in rows]
+
+
+def trouver_doublon(isbn: str, titre: str, auteur: str) -> "Book | None":
+    """Retourne un livre existant considéré comme doublon, sinon None.
+    Règle : même ISBN (s'il est renseigné), sinon même (titre + auteur) à la casse près."""
+    conn = _get_conn()
+    isbn = (isbn or "").strip()
+    if isbn:
+        row = conn.execute("SELECT * FROM books WHERE isbn = ? AND isbn != ''",
+                           (isbn,)).fetchone()
+        if row:
+            return _book_from_row(row)
+
+    row = conn.execute(
+        "SELECT * FROM books WHERE titre = ? COLLATE NOCASE AND auteur = ? COLLATE NOCASE",
+        ((titre or "").strip(), (auteur or "").strip()),
+    ).fetchone()
+    return _book_from_row(row) if row else None

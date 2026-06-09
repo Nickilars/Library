@@ -65,3 +65,12 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 .carte-infos .crayon { margin-top: 18px; background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 8px; padding: 6px 12px; opacity: .6; cursor: not-allowed; pointer-events: none; }
 
 .vide { padding: 40px; text-align: center; color: #b59a78; }
+
+/* ---------- Login + en-tête connecté ---------- */
+[hidden] { display: none !important; }
+.login { max-width: 320px; margin: 60px auto; display: flex; flex-direction: column; gap: 12px; background: #1a110a; padding: 24px; border-radius: 12px; border: 1px solid #4a3826; }
+.login h2 { margin: 0 0 4px; color: #c9a880; }
+.login input { padding: 10px; border-radius: 6px; border: 1px solid #5a4a35; background: #2b1d12; color: #eee; }
+.login button { padding: 10px; border-radius: 6px; border: none; background: #c9a880; color: #1a110a; font-weight: 600; cursor: pointer; }
+.login-erreur { color: #ff6b6b; margin: 0; }
+#btn-deconnexion { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 6px 12px; cursor: pointer; }

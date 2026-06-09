@@ -1,6 +1,6 @@
 // Visionneuse de livre 3D fermé (Three.js vendoré). Lecture seule.
 // Visionneuse persistante (un seul contexte WebGL) réutilisée entre ouvertures.
-import * as THREE from '/static/vendor/three.module.js';
+import * as THREE from './vendor/three.module.js';
 
 const W = 1.7, H = 2.4, T = 0.55;   // dimensions du livre (épais)
 let renderer, scene, camera, livre, matCouv, rafId = null, actif = false;

@@ -99,7 +99,7 @@ function ouvrirLivre(el) {
 
   const donnees = { titre: d.titre, isbn: d.isbn, couleur };
   if (webglDisponible()) {
-    import('/static/book3d.js')
+    import('./book3d.js')
       .then(mod => { book3dMod = mod; book3dActif = true; mod.ouvrir(zone, donnees); })
       .catch(() => { zone.appendChild(couverture2D(d, couleur)); });
   } else {

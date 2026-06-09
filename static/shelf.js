@@ -1,9 +1,11 @@
-// Étagère — navigation à 3 niveaux + livre animé. Lecture seule.
+// Étagère — navigation à 3 niveaux. Lecture seule.
 // Niveau 0 : étagère (tranches sans titre). Clic saga -> niveau 1.
 // Niveau 1 : vue focalisée d'un groupe de saga (titres visibles). Clic livre -> niveau 2.
-// Niveau 2 : livre ouvert animé (couverture -> ouverture -> pages -> infos).
+// Niveau 2 : détail du livre = livre 3D fermé (book3d.js) + carte d'infos ; repli 2D sans WebGL.
 
 const STATUTS = { non_lu: 'À lire', en_cours: 'En cours', lu: 'Lu' };
+let book3dMod = null;          // module book3d.js (chargé paresseusement)
+let book3dActif = false;       // un livre 3D est-il monté ?
 
 // ---------- Niveau 0 -> 1 : focaliser un groupe de saga ----------
 function focaliser(saga) {
@@ -18,12 +20,7 @@ function focaliser(saga) {
     : auteur.querySelector('.auteur-nom').textContent.trim();
   document.getElementById('focus-nom').textContent = nom;
 }
-
-// Appelé par l'en-tête de saga : onclick="basculerSaga(this)"
-function basculerSaga(elNom) {
-  focaliser(elNom.closest('.saga'));
-}
-
+function basculerSaga(elNom) { focaliser(elNom.closest('.saga')); }
 function quitterFocus() {
   fermerLivre();
   document.body.classList.remove('mode-focus');
@@ -31,116 +28,90 @@ function quitterFocus() {
   document.querySelectorAll('.auteur.auteur-focus').forEach(a => a.classList.remove('auteur-focus'));
 }
 
-// ---------- Niveau 1 -> 2 : ouvrir un livre ----------
-// Appelé par une tranche : onclick="choisirLivre(this)"
+// ---------- Niveau 1 -> 2 : ouvrir le détail d'un livre ----------
 function choisirLivre(el) {
-  // On impose de passer d'abord par la saga : hors mode focus, un clic sur une
-  // tranche focalise sa saga au lieu d'ouvrir directement le livre.
-  if (!document.body.classList.contains('mode-focus')) {
-    focaliser(el.closest('.saga'));
-    return;
-  }
+  if (!document.body.classList.contains('mode-focus')) { focaliser(el.closest('.saga')); return; }
   ouvrirLivre(el);
 }
 
-function couvRepli(couv, titre) {
-  const s = document.createElement('span');
-  s.className = 'couv-repli';
-  s.textContent = titre;
-  couv.replaceChildren(s);
-}
-
-function ajouterLigne(page, texte, classe) {
+function ligne(parent, texte, classe) {
   const p = document.createElement('p');
   if (classe) p.className = classe;
-  p.textContent = texte;   // textContent : jamais d'injection HTML (SEC-W1)
-  page.appendChild(p);
+  p.textContent = texte;          // textContent : pas d'injection HTML (SEC-W1)
+  parent.appendChild(p);
+}
+
+function construireCarte(d) {
+  const carte = document.createElement('div');
+  carte.className = 'carte-infos';
+  const h = document.createElement('h2'); h.textContent = d.titre; carte.appendChild(h);
+  ligne(carte, d.auteur + (d.annee ? ' · ' + d.annee : ''), 'aut');
+  if (d.saga && d.saga !== 'Aucune') {
+    ligne(carte, 'Saga : ' + d.saga + (d.tome ? ' · Tome ' + d.tome : ''), '');
+  }
+  ligne(carte, 'Statut : ' + (STATUTS[d.statut] || d.statut) + (d.possede === '1' ? ' · Possédé ✓' : ''), '');
+  if (d.note) ligne(carte, '★'.repeat(Number(d.note)), 'note');
+  if (d.commentaire) ligne(carte, '« ' + d.commentaire + ' »', 'com');
+  const crayon = document.createElement('button');
+  crayon.className = 'crayon'; crayon.disabled = true;
+  crayon.title = 'Modification — bientôt (Phase 3)'; crayon.textContent = '✏️ Modifier';
+  carte.appendChild(crayon);
+  return carte;
+}
+
+function webglDisponible() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  } catch (e) { return false; }
+}
+
+// Repli 2D : couverture en image (ou aplat couleur + titre si absente)
+function couverture2D(d, couleur) {
+  const div = document.createElement('div');
+  div.className = 'couv-2d';
+  div.style.background = couleur || '#444';
+  div.textContent = d.titre;
+  const isbn = (d.isbn || '').trim();
+  if (isbn) {
+    const img = document.createElement('img');
+    img.referrerPolicy = 'no-referrer';
+    img.alt = d.titre;
+    img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px';
+    img.onload = () => { div.textContent = ''; div.style.background = 'none'; div.appendChild(img); };
+    img.onerror = () => { /* on garde l'aplat couleur + titre */ };
+    img.src = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
+  }
+  return div;
 }
 
 function ouvrirLivre(el) {
   const d = el.dataset;
+  const couleur = el.style.getPropertyValue('--c');
   const overlay = document.getElementById('livre-ouvert');
   overlay.replaceChildren();
 
-  const livre = document.createElement('div');
-  livre.className = 'livre3d';
-
-  // Double page d'infos (état final, SOUS la couverture/les feuilles) — pas de couverture ici.
-  const spread = document.createElement('div');
-  spread.className = 'spread';
-
-  const gauche = document.createElement('div');
-  gauche.className = 'page page-gauche';
-  ajouterLigne(gauche, d.titre, 'titre-livre');
-  ajouterLigne(gauche, d.auteur + (d.annee ? ' · ' + d.annee : ''), 'sous');
-  if (d.saga && d.saga !== 'Aucune') {
-    ajouterLigne(gauche, 'Saga : ' + d.saga + (d.tome ? ' · Tome ' + d.tome : ''), '');
-  }
-
-  const droite = document.createElement('div');
-  droite.className = 'page page-droite';
-  ajouterLigne(droite, 'Statut : ' + (STATUTS[d.statut] || d.statut), '');
-  if (d.possede === '1') ajouterLigne(droite, 'Possédé ✓', '');
-  if (d.note) ajouterLigne(droite, '★'.repeat(Number(d.note)), 'note');
-  if (d.commentaire) ajouterLigne(droite, '« ' + d.commentaire + ' »', 'commentaire');
-  const crayon = document.createElement('button');
-  crayon.className = 'crayon';
-  crayon.disabled = true;
-  crayon.title = 'Modification — bientôt (Phase 3)';
-  crayon.textContent = '✏️';
-  droite.appendChild(crayon);
-
-  spread.appendChild(gauche);
-  spread.appendChild(droite);
-  livre.appendChild(spread);
-
-  // Feuilles décoratives qui défilent (au-dessus de la double page)
-  for (let i = 0; i < 4; i++) {
-    const f = document.createElement('div');
-    f.className = 'feuille';
-    f.style.setProperty('--i', i);
-    livre.appendChild(f);
-  }
-
-  // Couverture (étapes 1-2), au-dessus de tout : image OL ou couverture générée
-  const couv = document.createElement('div');
-  couv.className = 'couverture';
-  const url = d.isbn ? `https://covers.openlibrary.org/b/isbn/${d.isbn}-L.jpg` : '';
-  if (url) {
-    couv.style.backgroundImage = `url("${url}")`;
-    const img = new Image();
-    img.referrerPolicy = 'no-referrer';
-    img.onerror = () => {
-      couv.style.backgroundImage = 'none';
-      couv.style.background = el.style.getPropertyValue('--c');
-      couvRepli(couv, d.titre);
-    };
-    img.src = url;
-  } else {
-    couv.style.background = el.style.getPropertyValue('--c');
-    couvRepli(couv, d.titre);
-  }
-  livre.appendChild(couv);
-
-  overlay.appendChild(livre);
+  const zone = document.createElement('div');
+  zone.className = 'zone-livre';
+  overlay.appendChild(zone);
+  overlay.appendChild(construireCarte(d));
   overlay.classList.remove('cache');
 
-  // Démarre la séquence (les délais sont gérés en CSS via la classe 'demarre').
-  void livre.offsetWidth;  // force un reflow pour que la transition parte de l'état initial
-  livre.classList.add('demarre');
+  const donnees = { titre: d.titre, isbn: d.isbn, couleur };
+  if (webglDisponible()) {
+    import('/static/book3d.js')
+      .then(mod => { book3dMod = mod; book3dActif = true; mod.ouvrir(zone, donnees); })
+      .catch(() => { zone.appendChild(couverture2D(d, couleur)); });
+  } else {
+    zone.appendChild(couverture2D(d, couleur));
+  }
 
-  // Clic sur le fond = fermer ; clic sur le livre = sauter directement aux infos.
-  overlay.onclick = (e) => {
-    if (e.target === overlay) {
-      fermerLivre();
-    } else {
-      livre.classList.add('fini');
-    }
-  };
+  overlay.onclick = (e) => { if (e.target === overlay) fermerLivre(); };
 }
 
 function fermerLivre() {
   const overlay = document.getElementById('livre-ouvert');
+  if (book3dActif && book3dMod) { book3dMod.fermer(); book3dActif = false; }
   overlay.classList.add('cache');
   overlay.replaceChildren();
   overlay.onclick = null;

@@ -14,7 +14,7 @@ export function grouperLivres(livres) {
   const groupes = [];
   for (const b of tries) {
     let g = groupes[groupes.length - 1];
-    if (!g || g.auteur.toLowerCase() !== (b.auteur || '').toLowerCase()) {
+    if (!g || (g.auteur || '').toLowerCase() !== (b.auteur || '').toLowerCase()) {
       g = { auteur: b.auteur, sagas: [] }; groupes.push(g);
     }
     const nomSaga = b.saga || 'Aucune';

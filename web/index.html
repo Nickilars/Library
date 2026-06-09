@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Ma bibliothèque</title>
+  <link rel="stylesheet" href="./shelf.css">
+</head>
+<body>
+  <header class="entete">
+    <h1>📚 Ma bibliothèque</h1>
+    <div class="controles" id="controles" hidden>
+      <input id="recherche" type="search" placeholder="Rechercher titre, auteur, saga…">
+      <div class="filtres">
+        <button class="chip actif" data-statut="">Tous</button>
+        <button class="chip" data-statut="non_lu">À lire</button>
+        <button class="chip" data-statut="en_cours">En cours</button>
+        <button class="chip" data-statut="lu">Lu</button>
+      </div>
+      <button id="btn-deconnexion">Déconnexion</button>
+    </div>
+  </header>
+
+  <div id="barre-focus" class="barre-focus">
+    <button id="btn-retour">← Retour</button>
+    <span id="focus-nom"></span>
+  </div>
+
+  <main id="contenu">
+    <form id="login" class="login">
+      <h2>Connexion</h2>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required>
+      <input id="motdepasse" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+      <button type="submit">Se connecter</button>
+      <p id="login-erreur" class="login-erreur" hidden></p>
+    </form>
+    <div id="etagere" hidden></div>
+  </main>
+
+  <div id="livre-ouvert" class="livre-ouvert cache"></div>
+
+  <script src="./config.js"></script>
+  <script src="./vendor/supabase.js"></script>
+  <script src="./shelf.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

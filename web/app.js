@@ -150,6 +150,8 @@ function ouvrirModale(livre) {
   champ('f-note').value = (livre && livre.note != null) ? livre.note : '';
   champ('f-commentaire').value = livre ? (livre.commentaire || '') : '';
   elFormErreur.hidden = true;
+  const elIsbnStatut = document.getElementById('isbn-statut');
+  if (elIsbnStatut) elIsbnStatut.textContent = '';
   elBtnSupprimer.hidden = !livre;
   elModale.classList.remove('cache');
 }

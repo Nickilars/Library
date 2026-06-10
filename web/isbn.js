@@ -3,7 +3,7 @@
 function remplirChamps(livre) {
   const set = (id, v) => {
     if (v !== null && v !== undefined && String(v).trim() !== '') {
-      document.getElementById(id).value = v;
+      document.getElementById(id).value = String(v).trim();
     }
   };
   set('f-titre', livre.titre);
@@ -27,6 +27,7 @@ async function rechercherIsbn() {
     remplirChamps(data.livre);
     statut.textContent = 'Trouvé ✓';
   } catch (e) {
+    console.error('Recherche ISBN', e);
     statut.textContent = 'Erreur de recherche.';
   }
 }

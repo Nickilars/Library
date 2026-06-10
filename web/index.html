@@ -20,6 +20,7 @@
         <button class="chip" data-statut="en_cours">En cours</button>
         <button class="chip" data-statut="lu">Lu</button>
       </div>
+      <button id="btn-ajouter">➕ Ajouter</button>
       <button id="btn-deconnexion">Déconnexion</button>
     </div>
   </header>
@@ -41,6 +42,33 @@
     </form>
     <div id="etagere" hidden></div>
   </main>
+
+  <div id="modale-edition" class="modale cache">
+    <form id="form-edition" class="form-edition">
+      <h2 id="form-titre-modale">Ajouter un livre</h2>
+      <input id="f-titre" placeholder="Titre *" required>
+      <input id="f-auteur" placeholder="Auteur *" required>
+      <input id="f-annee" placeholder="Année">
+      <input id="f-isbn" placeholder="ISBN (13 chiffres)">
+      <input id="f-saga" placeholder="Saga">
+      <input id="f-tome" type="number" min="0" placeholder="Tome">
+      <select id="f-statut">
+        <option value="non_lu">À lire</option>
+        <option value="en_cours">En cours</option>
+        <option value="lu">Lu</option>
+      </select>
+      <label><input id="f-possede" type="checkbox"> Possédé</label>
+      <label><input id="f-wishlist" type="checkbox"> Wishlist</label>
+      <input id="f-note" type="number" min="0" max="5" placeholder="Note (0–5)">
+      <textarea id="f-commentaire" placeholder="Commentaire"></textarea>
+      <p id="form-erreur" class="form-erreur" hidden></p>
+      <div class="form-actions">
+        <button type="submit">Enregistrer</button>
+        <button type="button" id="btn-supprimer" class="btn-supprimer" hidden>🗑️ Supprimer</button>
+        <button type="button" id="btn-annuler">Annuler</button>
+      </div>
+    </form>
+  </div>
 
   <div id="livre-ouvert" class="livre-ouvert cache"></div>
 

@@ -1,6 +1,5 @@
-// Frontend Supabase : authentification, récupération des livres (RLS), rendu de l'étagère.
-// B2 : cache des livres en localStorage (lecture hors-ligne) + enregistrement du service worker.
-import { grouperLivres, couleurTranche } from './shelf-logic.mjs';
+// Frontend Supabase : auth, lecture (RLS), rendu, cache hors-ligne (B2), et écriture (C1).
+import { grouperLivres, couleurTranche, validerLivre } from './shelf-logic.mjs';
 
 const client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
@@ -10,8 +9,17 @@ const elControles = document.getElementById('controles');
 const elErreur = document.getElementById('login-erreur');
 const elBandeau = document.getElementById('bandeau-hors-ligne');
 
+const elModale = document.getElementById('modale-edition');
+const elForm = document.getElementById('form-edition');
+const elFormErreur = document.getElementById('form-erreur');
+const elFormTitre = document.getElementById('form-titre-modale');
+const elBtnSupprimer = document.getElementById('btn-supprimer');
+
 const CLE_LIVRES = 'biblio:livres';
 const CLE_DATE = 'biblio:livres:date';
+
+let livresCharges = [];   // dernière liste chargée (pour pré-remplir l'édition + détecter les doublons)
+let editionId = null;     // null = ajout ; sinon id du livre en cours d'édition
 
 function montrerLogin() {
   elLogin.hidden = false; elEtagere.hidden = true; elControles.hidden = true;
@@ -31,6 +39,7 @@ function masquerBandeau() { elBandeau.hidden = true; }
 async function chargerLivres() {
   const { data, error } = await client.from('books').select('*');
   if (!error && data) {
+    livresCharges = data;
     try {
       localStorage.setItem(CLE_LIVRES, JSON.stringify(data));
       localStorage.setItem(CLE_DATE, new Date().toISOString());
@@ -39,12 +48,13 @@ async function chargerLivres() {
     construireEtagere(data);
     return;
   }
-  // Échec (typiquement hors-ligne) : repli sur le cache local.
   const cache = localStorage.getItem(CLE_LIVRES);
   if (cache) {
+    livresCharges = JSON.parse(cache);
     afficherBandeau(localStorage.getItem(CLE_DATE));
-    construireEtagere(JSON.parse(cache));
+    construireEtagere(livresCharges);
   } else {
+    livresCharges = [];
     elEtagere.replaceChildren();
     const p = document.createElement('p'); p.className = 'vide';
     p.textContent = 'Hors-ligne et aucune donnée en cache. Connecte-toi une fois en ligne.';
@@ -99,6 +109,7 @@ function construireEtagere(livres) {
   }
 }
 
+// ---------- Connexion ----------
 elLogin.addEventListener('submit', async (e) => {
   e.preventDefault();
   elErreur.hidden = true;
@@ -114,11 +125,94 @@ document.getElementById('btn-deconnexion').addEventListener('click', async () =>
   await client.auth.signOut();
   localStorage.removeItem(CLE_LIVRES);
   localStorage.removeItem(CLE_DATE);
+  livresCharges = [];
   masquerBandeau();
   elEtagere.replaceChildren();
   montrerLogin();
 });
 
+// ---------- Édition (C1) ----------
+function champ(id) { return document.getElementById(id); }
+function erreurForm(msg) { elFormErreur.textContent = msg; elFormErreur.hidden = false; }
+
+function ouvrirModale(livre) {
+  editionId = livre ? livre.id : null;
+  elFormTitre.textContent = livre ? 'Modifier le livre' : 'Ajouter un livre';
+  champ('f-titre').value = livre ? (livre.titre || '') : '';
+  champ('f-auteur').value = livre ? (livre.auteur || '') : '';
+  champ('f-annee').value = livre ? (livre.annee_publication || '') : '';
+  champ('f-isbn').value = livre ? (livre.isbn || '') : '';
+  champ('f-saga').value = (livre && livre.saga && livre.saga !== 'Aucune') ? livre.saga : '';
+  champ('f-tome').value = (livre && livre.tome != null) ? livre.tome : '';
+  champ('f-statut').value = livre ? (livre.statut_lecture || 'non_lu') : 'non_lu';
+  champ('f-possede').checked = !!(livre && livre.possede);
+  champ('f-wishlist').checked = !!(livre && livre.wishlist);
+  champ('f-note').value = (livre && livre.note != null) ? livre.note : '';
+  champ('f-commentaire').value = livre ? (livre.commentaire || '') : '';
+  elFormErreur.hidden = true;
+  elBtnSupprimer.hidden = !livre;
+  elModale.classList.remove('cache');
+}
+function fermerModale() { elModale.classList.add('cache'); editionId = null; }
+
+// Appelé par le ✏️ de shelf.js
+window.ouvrirEdition = (id) => {
+  const l = livresCharges.find(b => String(b.id) === String(id));
+  if (l) ouvrirModale(l);
+};
+
+function doublon(livre) {
+  const isbn = (livre.isbn || '').trim();
+  if (isbn) {
+    const parIsbn = livresCharges.find(b => (b.isbn || '') === isbn);
+    if (parIsbn) return parIsbn;
+  }
+  const t = livre.titre.toLowerCase(), a = livre.auteur.toLowerCase();
+  return livresCharges.find(b => (b.titre || '').toLowerCase() === t && (b.auteur || '').toLowerCase() === a) || null;
+}
+
+elForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  elFormErreur.hidden = true;
+  if (!navigator.onLine) { erreurForm('Action impossible hors-ligne.'); return; }
+  const v = validerLivre({
+    titre: champ('f-titre').value, auteur: champ('f-auteur').value,
+    annee_publication: champ('f-annee').value, isbn: champ('f-isbn').value,
+    saga: champ('f-saga').value, tome: champ('f-tome').value,
+    statut_lecture: champ('f-statut').value,
+    possede: champ('f-possede').checked, wishlist: champ('f-wishlist').checked,
+    note: champ('f-note').value, commentaire: champ('f-commentaire').value,
+  });
+  if (!v.ok) { erreurForm(v.erreur); return; }
+
+  if (editionId === null) {
+    const dup = doublon(v.livre);
+    if (dup) { erreurForm(`Doublon : « ${dup.titre} » de ${dup.auteur} est déjà dans la collection.`); return; }
+    const { data: { session } } = await client.auth.getSession();
+    const { error } = await client.from('books').insert({ ...v.livre, user_id: session.user.id });
+    if (error) { erreurForm("Échec de l'ajout : " + error.message); return; }
+  } else {
+    const { error } = await client.from('books').update(v.livre).eq('id', editionId);
+    if (error) { erreurForm('Échec de la modification : ' + error.message); return; }
+  }
+  fermerModale();
+  await chargerLivres();
+});
+
+elBtnSupprimer.addEventListener('click', async () => {
+  if (editionId === null) return;
+  if (!navigator.onLine) { erreurForm('Action impossible hors-ligne.'); return; }
+  if (!confirm('Supprimer définitivement ce livre ?')) return;
+  const { error } = await client.from('books').delete().eq('id', editionId);
+  if (error) { erreurForm('Échec de la suppression : ' + error.message); return; }
+  fermerModale();
+  await chargerLivres();
+});
+
+document.getElementById('btn-ajouter').addEventListener('click', () => ouvrirModale(null));
+document.getElementById('btn-annuler').addEventListener('click', fermerModale);
+
+// ---------- Démarrage ----------
 (async function init() {
   const { data: { session } } = await client.auth.getSession();
   if (session) await montrerApp(); else montrerLogin();

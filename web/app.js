@@ -189,6 +189,7 @@ elForm.addEventListener('submit', async (e) => {
     const dup = doublon(v.livre);
     if (dup) { erreurForm(`Doublon : « ${dup.titre} » de ${dup.auteur} est déjà dans la collection.`); return; }
     const { data: { session } } = await client.auth.getSession();
+    if (!session) { erreurForm('Session expirée, reconnecte-toi.'); return; }
     const { error } = await client.from('books').insert({ ...v.livre, user_id: session.user.id });
     if (error) { erreurForm("Échec de l'ajout : " + error.message); return; }
   } else {

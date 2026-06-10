@@ -53,8 +53,12 @@ function construireCarte(d) {
   if (d.note) ligne(carte, '★'.repeat(Number(d.note)), 'note');
   if (d.commentaire) ligne(carte, '« ' + d.commentaire + ' »', 'com');
   const crayon = document.createElement('button');
-  crayon.className = 'crayon'; crayon.disabled = true;
-  crayon.title = 'Modification — bientôt (Phase 3)'; crayon.textContent = '✏️ Modifier';
+  crayon.className = 'crayon';
+  crayon.title = 'Modifier ce livre'; crayon.textContent = '✏️ Modifier';
+  crayon.addEventListener('click', () => {
+    fermerLivre();
+    if (window.ouvrirEdition) window.ouvrirEdition(d.id);
+  });
   carte.appendChild(crayon);
   return carte;
 }

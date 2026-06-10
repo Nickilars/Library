@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import {
-  nettoyerIsbn, isbnValide, extraireAnnee, normaliserOpenLibrary,
+  nettoyerIsbn, isbnValide, extraireAnnee, normaliserOpenLibrary, parserUnimarc,
 } from '../supabase/functions/lookup/lookup-core.mjs';
 
 // nettoyerIsbn : retire espaces et tirets
@@ -41,4 +41,50 @@ assert.strictEqual(normaliserOpenLibrary({}, '9780553573404'), null);
 // entrée sans titre -> null (on ne renvoie pas un livre sans titre)
 assert.strictEqual(normaliserOpenLibrary({ 'ISBN:9780553573404': { authors: [] } }, '9780553573404'), null);
 
-console.log('OK : Task 2 (OpenLibrary) passe.');
+// parserUnimarc : notice avec saga (461) + tome
+const xmlAvecSaga = `
+<srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/">
+ <srw:records><srw:record><srw:recordData>
+  <mxc:record xmlns:mxc="info:lc/xmlns/marcxchange-v2">
+   <mxc:datafield tag="200"><mxc:subfield code="a">L'Apprenti assassin</mxc:subfield></mxc:datafield>
+   <mxc:datafield tag="700"><mxc:subfield code="a">Hobb</mxc:subfield><mxc:subfield code="b">Robin</mxc:subfield></mxc:datafield>
+   <mxc:datafield tag="210"><mxc:subfield code="d">1998</mxc:subfield></mxc:datafield>
+   <mxc:datafield tag="461"><mxc:subfield code="t">L'Assassin royal</mxc:subfield><mxc:subfield code="v">1</mxc:subfield></mxc:datafield>
+  </mxc:record>
+ </srw:recordData></srw:record></srw:records>
+</srw:searchRetrieveResponse>`;
+const u = parserUnimarc(xmlAvecSaga);
+assert.strictEqual(u.titre, "L'Apprenti assassin");
+assert.strictEqual(u.auteur, 'Robin Hobb');
+assert.strictEqual(u.annee, 1998);
+assert.strictEqual(u.saga, "L'Assassin royal");
+assert.strictEqual(u.tome, '1');
+
+// notice sans 461 -> saga/tome vides, repli année sur 214$d
+const xmlSansSaga = `
+<mxc:record xmlns:mxc="info:lc/xmlns/marcxchange-v2">
+ <mxc:datafield tag="200"><mxc:subfield code="a">Le Hobbit</mxc:subfield></mxc:datafield>
+ <mxc:datafield tag="700"><mxc:subfield code="a">Tolkien</mxc:subfield></mxc:datafield>
+ <mxc:datafield tag="214"><mxc:subfield code="d">impr. 2012</mxc:subfield></mxc:datafield>
+</mxc:record>`;
+const u2 = parserUnimarc(xmlSansSaga);
+assert.strictEqual(u2.titre, 'Le Hobbit');
+assert.strictEqual(u2.auteur, 'Tolkien');
+assert.strictEqual(u2.annee, 2012);
+assert.strictEqual(u2.saga, '');
+assert.strictEqual(u2.tome, '');
+
+// décodage d'entités + repli saga sur 225$a
+const xmlEntites = `
+<mxc:record xmlns:mxc="info:lc/xmlns/marcxchange-v2">
+ <mxc:datafield tag="200"><mxc:subfield code="a">Pierre &amp; Jean</mxc:subfield></mxc:datafield>
+ <mxc:datafield tag="225"><mxc:subfield code="a">Classiques</mxc:subfield></mxc:datafield>
+</mxc:record>`;
+const u3 = parserUnimarc(xmlEntites);
+assert.strictEqual(u3.titre, 'Pierre & Jean');
+assert.strictEqual(u3.saga, 'Classiques');
+
+// aucune notice (pas de 200$a) -> null
+assert.strictEqual(parserUnimarc('<vide/>'), null);
+
+console.log('OK : Task 3 (Unimarc) passe.');

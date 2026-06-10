@@ -62,7 +62,7 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 .carte-infos p { margin: 6px 0; font-size: 15px; }
 .carte-infos .note { color: #b8860b; font-size: 18px; }
 .carte-infos .com { font-style: italic; color: #9a8a6a; margin-top: 14px; }
-.carte-infos .crayon { margin-top: 18px; background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 8px; padding: 6px 12px; opacity: .6; cursor: not-allowed; pointer-events: none; }
+.carte-infos .crayon { margin-top: 18px; background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 
 .vide { padding: 40px; text-align: center; color: #b59a78; }
 
@@ -77,3 +77,19 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 
 /* ---------- Bandeau hors-ligne (PWA) ---------- */
 .bandeau-hors-ligne { background: #5a3a1a; color: #f0d9ff; text-align: center; padding: 6px 12px; font-size: 14px; }
+
+/* ---------- Modale d'édition (C1) ---------- */
+#btn-ajouter { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.modale { position: fixed; inset: 0; z-index: 60; background: rgba(10,7,4,.8); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modale.cache { display: none; }
+.form-edition { width: 340px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #1a110a; border: 1px solid #4a3826; border-radius: 12px; padding: 20px; }
+.form-edition h2 { margin: 0; color: #c9a880; font-size: 18px; }
+.form-edition input, .form-edition select, .form-edition textarea { padding: 8px; border-radius: 6px; border: 1px solid #5a4a35; background: #2b1d12; color: #eee; font: inherit; }
+.form-edition textarea { min-height: 60px; resize: vertical; }
+.form-edition label { color: #eee; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+.form-erreur { color: #ff6b6b; margin: 0; }
+.form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.form-actions button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; }
+.form-actions button[type=submit] { background: #c9a880; color: #1a110a; font-weight: 600; }
+.btn-supprimer { background: #7a2a2a; color: #fff; }
+#btn-annuler { background: #2b1d12; color: #c9a880; border: 1px solid #5a4a35; }

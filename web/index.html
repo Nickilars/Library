@@ -49,7 +49,11 @@
       <input id="f-titre" placeholder="Titre *" required>
       <input id="f-auteur" placeholder="Auteur *" required>
       <input id="f-annee" placeholder="Année">
-      <input id="f-isbn" placeholder="ISBN (13 chiffres)">
+      <div class="ligne-isbn">
+        <input id="f-isbn" placeholder="ISBN (13 chiffres)">
+        <button type="button" id="btn-isbn" class="btn-isbn">🔍 Rechercher</button>
+      </div>
+      <p id="isbn-statut" class="isbn-statut"></p>
       <input id="f-saga" placeholder="Saga">
       <input id="f-tome" type="number" min="0" placeholder="Tome">
       <select id="f-statut">
@@ -75,6 +79,7 @@
   <script src="./config.js"></script>
   <script src="./vendor/supabase.js"></script>
   <script src="./shelf.js"></script>
+  <script src="./isbn.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>

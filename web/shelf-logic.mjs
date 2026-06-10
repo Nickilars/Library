@@ -47,3 +47,51 @@ function hslVersHex(h, s, l) {
   const hh = v => Math.round((v + m) * 255).toString(16).padStart(2, '0');
   return `#${hh(r)}${hh(g)}${hh(bb)}`;
 }
+
+// --- Validation d'un livre avant écriture (miroir de la Phase 1, SEC-2) ---
+const STATUTS_VALIDES = new Set(['non_lu', 'en_cours', 'lu']);
+const LONGUEUR_MAX = 500;
+
+export function validerLivre(livre) {
+  const titre = (livre.titre || '').trim();
+  const auteur = (livre.auteur || '').trim();
+  if (!titre) return { ok: false, erreur: 'Le titre est obligatoire.' };
+  if (!auteur) return { ok: false, erreur: "L'auteur est obligatoire." };
+  for (const [nom, val] of [['titre', titre], ['auteur', auteur], ['saga', livre.saga], ['commentaire', livre.commentaire]]) {
+    if (val && val.length > LONGUEUR_MAX) return { ok: false, erreur: `Le champ ${nom} dépasse ${LONGUEUR_MAX} caractères.` };
+  }
+  if (!STATUTS_VALIDES.has(livre.statut_lecture)) return { ok: false, erreur: 'Statut de lecture invalide.' };
+
+  let noteNorm = null;
+  if (livre.note !== '' && livre.note !== null && livre.note !== undefined) {
+    const n = Number(livre.note);
+    if (!Number.isInteger(n) || n < 0 || n > 5) return { ok: false, erreur: 'La note doit être un entier entre 0 et 5.' };
+    noteNorm = n;
+  }
+
+  const isbn = (livre.isbn || '').trim();
+  if (isbn && !/^\d{13}$/.test(isbn)) return { ok: false, erreur: "L'ISBN doit comporter 13 chiffres." };
+
+  let tomeNorm = null;
+  if (livre.tome !== '' && livre.tome !== null && livre.tome !== undefined) {
+    const t = Number(livre.tome);
+    if (!Number.isInteger(t) || t < 0) return { ok: false, erreur: 'Le tome doit être un entier positif.' };
+    tomeNorm = t;
+  }
+
+  return {
+    ok: true,
+    livre: {
+      titre, auteur,
+      annee_publication: (livre.annee_publication || '').trim(),
+      isbn,
+      saga: (livre.saga || '').trim() || 'Aucune',
+      tome: tomeNorm,
+      statut_lecture: livre.statut_lecture,
+      possede: !!livre.possede,
+      wishlist: !!livre.wishlist,
+      note: noteNorm,
+      commentaire: (livre.commentaire || '').trim(),
+    },
+  };
+}

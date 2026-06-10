@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { grouperLivres, couleurTranche } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre } from './shelf-logic.mjs';
 
 // couleurTranche : déterministe + format #rrggbb + variabilité
 const c1 = couleurTranche('Dune', 'Herbert');
@@ -30,5 +30,25 @@ assert.strictEqual(g2[0].sagas.length, 1, 'sagas casse-insensible');
 // saga vide -> "Aucune"
 const g3 = grouperLivres([{ titre: 'Seul', auteur: 'X', saga: null, tome: null }]);
 assert.strictEqual(g3[0].sagas[0].nom, 'Aucune');
+
+// validerLivre : champs requis
+assert.strictEqual(validerLivre({ titre: '', auteur: 'A', statut_lecture: 'lu' }).ok, false, 'titre requis');
+assert.strictEqual(validerLivre({ titre: 'T', auteur: '', statut_lecture: 'lu' }).ok, false, 'auteur requis');
+// statut invalide
+assert.strictEqual(validerLivre({ titre: 'T', auteur: 'A', statut_lecture: 'zzz' }).ok, false, 'statut');
+// note hors bornes
+assert.strictEqual(validerLivre({ titre: 'T', auteur: 'A', statut_lecture: 'lu', note: 9 }).ok, false, 'note');
+// isbn non 13 chiffres
+assert.strictEqual(validerLivre({ titre: 'T', auteur: 'A', statut_lecture: 'lu', isbn: 'abc' }).ok, false, 'isbn');
+// tome négatif
+assert.strictEqual(validerLivre({ titre: 'T', auteur: 'A', statut_lecture: 'lu', tome: -1 }).ok, false, 'tome');
+// cas valide normalisé
+const rv = validerLivre({ titre: '  Dune ', auteur: ' Herbert ', statut_lecture: 'lu', saga: '', note: '', tome: '', isbn: '' });
+assert.strictEqual(rv.ok, true, 'valide');
+assert.strictEqual(rv.livre.titre, 'Dune');
+assert.strictEqual(rv.livre.saga, 'Aucune');
+assert.strictEqual(rv.livre.note, null);
+assert.strictEqual(rv.livre.tome, null);
+assert.strictEqual(rv.livre.possede, false);
 
 console.log('OK : tests shelf-logic passent.');

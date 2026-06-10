@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import {
-  nettoyerIsbn, isbnValide, extraireAnnee,
+  nettoyerIsbn, isbnValide, extraireAnnee, normaliserOpenLibrary,
 } from '../supabase/functions/lookup/lookup-core.mjs';
 
 // nettoyerIsbn : retire espaces et tirets
@@ -21,4 +21,24 @@ assert.strictEqual(extraireAnnee(''), null);
 assert.strictEqual(extraireAnnee(null), null);
 assert.strictEqual(extraireAnnee('sans date'), null);
 
-console.log('OK : Task 1 (isbn + année) passe.');
+// normaliserOpenLibrary : extrait titre/auteur/année, saga/tome vides
+const olJson = {
+  'ISBN:9780553573404': {
+    title: 'A Game of Thrones',
+    authors: [{ name: 'George R. R. Martin' }],
+    publish_date: 'August 1996',
+  },
+};
+const ol = normaliserOpenLibrary(olJson, '9780553573404');
+assert.strictEqual(ol.titre, 'A Game of Thrones');
+assert.strictEqual(ol.auteur, 'George R. R. Martin');
+assert.strictEqual(ol.annee, 1996);
+assert.strictEqual(ol.saga, '');
+assert.strictEqual(ol.tome, '');
+
+// ISBN absent de la réponse -> null
+assert.strictEqual(normaliserOpenLibrary({}, '9780553573404'), null);
+// entrée sans titre -> null (on ne renvoie pas un livre sans titre)
+assert.strictEqual(normaliserOpenLibrary({ 'ISBN:9780553573404': { authors: [] } }, '9780553573404'), null);
+
+console.log('OK : Task 2 (OpenLibrary) passe.');

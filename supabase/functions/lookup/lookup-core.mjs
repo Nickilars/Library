@@ -14,3 +14,17 @@ export function extraireAnnee(texte) {
   const m = String(texte).match(/\d{4}/);
   return m ? Number(m[0]) : null;
 }
+
+// data = JSON OpenLibrary (jscmd=data). Renvoie {titre,auteur,annee,saga,tome} ou null.
+export function normaliserOpenLibrary(data, isbn) {
+  const entree = data && data['ISBN:' + isbn];
+  if (!entree || !entree.title) return null;
+  const auteur = (entree.authors && entree.authors[0] && entree.authors[0].name) || '';
+  return {
+    titre: entree.title,
+    auteur,
+    annee: extraireAnnee(entree.publish_date),
+    saga: '',
+    tome: '',
+  };
+}

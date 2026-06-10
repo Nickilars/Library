@@ -31,7 +31,11 @@ self.addEventListener('fetch', (e) => {
       const reseau = fetch(req)
         .then(rep => { if (rep && rep.ok) cache.put(req, rep.clone()); return rep; })
         .catch(() => enCache);
-      return enCache || reseau;   // stale-while-revalidate : cache d'abord, MAJ en arrière-plan
+      if (enCache) {
+        e.waitUntil(reseau);   // garde le SW vivant pour la MAJ en arrière-plan
+        return enCache;
+      }
+      return reseau;
     })
   );
 });

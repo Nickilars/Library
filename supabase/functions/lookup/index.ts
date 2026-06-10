@@ -5,6 +5,20 @@ import {
 
 const ORIGINE = "https://nrossaa.github.io"; // origine du site GitHub Pages (sans /Library/)
 
+const TIMEOUT_MS = 5000;
+
+async function fetchAvecTimeout(url: string, init: RequestInit = {}): Promise<Response | null> {
+  const controleur = new AbortController();
+  const minuteur = setTimeout(() => controleur.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controleur.signal });
+  } catch (_e) {
+    return null; // timeout (abort) ou erreur réseau -> traité comme "non trouvé"
+  } finally {
+    clearTimeout(minuteur);
+  }
+}
+
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ORIGINE,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -20,8 +34,8 @@ function reponse(corps: unknown, statut = 200): Response {
 
 async function chercherOpenLibrary(isbn: string) {
   const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) return null;
+  const res = await fetchAvecTimeout(url, { headers: { Accept: "application/json" } });
+  if (!res || !res.ok) return null;
   return normaliserOpenLibrary(await res.json(), isbn);
 }
 
@@ -29,8 +43,8 @@ async function chercherBnf(isbn: string) {
   const query = `bib.isbn all "${isbn}"`;
   const url = "https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve"
     + `&query=${encodeURIComponent(query)}&recordSchema=unimarcxchange&maximumRecords=1`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
+  const res = await fetchAvecTimeout(url);
+  if (!res || !res.ok) return null;
   return parserUnimarc(await res.text());
 }
 

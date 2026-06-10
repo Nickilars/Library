@@ -74,3 +74,6 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 .login button { padding: 10px; border-radius: 6px; border: none; background: #c9a880; color: #1a110a; font-weight: 600; cursor: pointer; }
 .login-erreur { color: #ff6b6b; margin: 0; }
 #btn-deconnexion { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+
+/* ---------- Bandeau hors-ligne (PWA) ---------- */
+.bandeau-hors-ligne { background: #5a3a1a; color: #f0d9ff; text-align: center; padding: 6px 12px; font-size: 14px; }

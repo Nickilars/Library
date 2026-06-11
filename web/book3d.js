@@ -5,7 +5,7 @@ import * as THREE from './vendor/three.module.js';
 // ---- Anatomie du relié (unités scène) — voir le plan E1 pour le schéma ----
 const PAGES_L = 1.68, PAGES_H = 2.40, PAGES_E = 0.42;   // bloc de pages
 const PLAT_E = 0.07;                                     // épaisseur d'un plat
-const PLAT_X0 = -0.80, PLAT_X1 = 0.90;                   // gorge 0.05, débord gouttière 0.07
+const PLAT_X0 = -0.86, PLAT_X1 = 0.90;                   // plats glissés sous le dos (pas de fente), débord gouttière 0.07
 const PLAT_H = 2.52, PLAT_R = 0.07;                      // débord tête/pied, coins arrondis
 const DOS_X = -0.85, DOS_R = 0.28, DOS_BOMBE = 0.46;     // demi-cylindre aplati
 const JEU = 0.005;                                       // évite plats/pages coplanaires

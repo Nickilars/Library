@@ -19,3 +19,5 @@ jobs:
         run: node web/test_lookup_core.mjs
       - name: Tests logique scan
         run: node web/test_scan_logic.mjs
+      - name: Tests résolution couverture
+        run: node web/test_cover_core.mjs

@@ -84,7 +84,7 @@ function couverture2D(d, couleur) {
     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px';
     img.onload = () => { div.textContent = ''; div.style.background = 'none'; div.appendChild(img); };
     img.onerror = () => { /* on garde l'aplat couleur + titre */ };
-    img.src = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
+    img.src = `${window.SUPABASE_URL}/functions/v1/cover?isbn=${isbn}`;   // F1 : OL -> BnF -> Amazon
   }
   return div;
 }

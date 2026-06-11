@@ -1,5 +1,5 @@
 // Frontend Supabase : auth, lecture (RLS), rendu, cache hors-ligne (B2), et écriture (C1).
-import { grouperLivres, couleurTranche, validerLivre } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre, apparenceTranche } from './shelf-logic.mjs';
 import { livreDepuisScan } from './scan-logic.mjs';
 
 const client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -98,17 +98,27 @@ function construireEtagere(livres) {
         livre.setAttribute('data-commentaire', b.commentaire || '');
         livre.setAttribute('data-possede', b.possede ? '1' : '0');
         livre.style.setProperty('--c', couleurTranche(b.titre, b.auteur));
+        const ap = apparenceTranche(b.titre, b.auteur);   // E2 : variations physiques
+        livre.style.setProperty('--h', ap.hauteur + 'px');
+        livre.style.setProperty('--l', ap.largeur + 'px');
+        livre.style.setProperty('--rot', ap.inclinaison + 'deg');
         livre.setAttribute('onclick', 'choisirLivre(this)');
         const t = document.createElement('span'); t.className = 'tranche-titre'; t.textContent = b.titre;
         livre.appendChild(t);
         rangee.appendChild(livre);
       }
-      divS.appendChild(rangee);
+      const casier = document.createElement('div'); casier.className = 'casier';      // E2
+      casier.appendChild(rangee);
+      const planche = document.createElement('div'); planche.className = 'planche';
+      casier.appendChild(planche);
+      divS.appendChild(casier);
       section.appendChild(divS);
     }
     elEtagere.appendChild(section);
   }
 }
+
+window.construireEtagere = construireEtagere;   // page d'essai dev_etagere.html
 
 // ---------- Connexion ----------
 elLogin.addEventListener('submit', async (e) => {

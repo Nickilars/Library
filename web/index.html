@@ -21,6 +21,7 @@
         <button class="chip" data-statut="lu">Lu</button>
       </div>
       <button id="btn-ajouter">➕ Ajouter</button>
+      <button id="btn-scan-pile" hidden>📷 Scanner une pile</button>
       <button id="btn-deconnexion">Déconnexion</button>
     </div>
   </header>
@@ -52,6 +53,7 @@
       <div class="ligne-isbn">
         <input id="f-isbn" placeholder="ISBN (13 chiffres)">
         <button type="button" id="btn-isbn" class="btn-isbn">🔍 Rechercher</button>
+        <button type="button" id="btn-scan" class="btn-isbn" hidden>📷 Scanner</button>
       </div>
       <p id="isbn-statut" class="isbn-statut"></p>
       <input id="f-saga" placeholder="Saga">
@@ -80,6 +82,7 @@
   <script src="./vendor/supabase.js"></script>
   <script src="./shelf.js"></script>
   <script src="./isbn.js"></script>
+  <script type="module" src="./scan.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>

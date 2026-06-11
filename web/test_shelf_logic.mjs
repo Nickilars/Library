@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { grouperLivres, couleurTranche, validerLivre } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre, apparenceTranche } from './shelf-logic.mjs';
 
 // couleurTranche : déterministe + format #rrggbb + variabilité
 const c1 = couleurTranche('Dune', 'Herbert');
@@ -50,5 +50,21 @@ assert.strictEqual(rv.livre.saga, 'Aucune');
 assert.strictEqual(rv.livre.note, null);
 assert.strictEqual(rv.livre.tome, null);
 assert.strictEqual(rv.livre.possede, false);
+
+// apparenceTranche : déterministe, bornes respectées, inclinaison rare et bornée (E2)
+const a1 = apparenceTranche('Dune', 'Herbert');
+assert.deepStrictEqual(a1, apparenceTranche('Dune', 'Herbert'), 'déterministe');
+let penches = 0;
+for (let i = 0; i < 200; i++) {
+  const a = apparenceTranche('Livre ' + i, 'Auteur ' + (i % 13));
+  assert.ok(a.hauteur >= 106 && a.hauteur <= 124, 'hauteur 106-124 (' + a.hauteur + ')');
+  assert.ok(a.largeur >= 22 && a.largeur <= 34, 'largeur 22-34 (' + a.largeur + ')');
+  assert.ok([-4, 0, 4].includes(a.inclinaison), 'inclinaison -4/0/4');
+  if (a.inclinaison !== 0) penches++;
+}
+assert.ok(penches > 5 && penches < 80, `inclinés ~1/7 (${penches}/200)`);
+// variabilité : deux livres différents ne partagent pas toute leur apparence
+const a2 = apparenceTranche('Le Hobbit', 'Tolkien');
+assert.notDeepStrictEqual(a1, a2, 'apparences distinctes');
 
 console.log('OK : tests shelf-logic passent.');

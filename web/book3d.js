@@ -228,7 +228,8 @@ function animer(now) {
 function appliquerCouverture(d) {
   const isbn = (d.isbn || '').trim();
   if (isbn) {
-    const url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
+    // Fonction Edge "cover" (F1) : OpenLibrary -> BnF -> Amazon, avec CORS pour WebGL.
+    const url = `${window.SUPABASE_URL}/functions/v1/cover?isbn=${isbn}`;
     const chargeur = new THREE.TextureLoader();
     chargeur.crossOrigin = 'anonymous';
     chargeur.load(

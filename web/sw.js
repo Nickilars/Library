@@ -1,6 +1,6 @@
 // Service worker : met en cache la coquille statique (same-origin) pour la lecture hors-ligne.
 // Les données Supabase (cross-origin) sont gérées au niveau de app.js (localStorage), pas ici.
-const CACHE = 'biblio-v4';
+const CACHE = 'biblio-v5';
 const COQUILLE = [
   './', './index.html', './config.js', './app.js', './shelf.js', './isbn.js', './shelf-logic.mjs',
   './scan.js', './scan-logic.mjs',

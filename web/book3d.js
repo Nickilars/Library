@@ -202,12 +202,25 @@ function init(canvas) {
   window.addEventListener('resize', redimensionner);
 }
 
+// Rayon englobant du livre (demi-diagonale + marge) : sert à adapter la caméra.
+const RAYON_LIVRE = 1.68;
+
+// Place la caméra pour que la sphère englobante tienne dans le canvas quel que soit
+// son ratio : aucune rotation ne peut plus sortir du cadre (cadrage garanti).
+function cadrerCamera() {
+  const demiFov = (camera.fov * Math.PI / 180) / 2;
+  const t = Math.tan(demiFov);
+  const dist = Math.max(RAYON_LIVRE / t, RAYON_LIVRE / (t * camera.aspect)) + 0.25;
+  camera.position.z = dist;
+}
+
 function redimensionner() {
   if (!renderer) return;
   const cv = renderer.domElement;
   const w = cv.clientWidth, h = cv.clientHeight;
   if (w && h && (cv.width !== w || cv.height !== h)) {
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    cadrerCamera();
   }
 }
 

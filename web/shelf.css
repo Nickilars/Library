@@ -50,19 +50,30 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
   position: fixed; inset: 0; z-index: 50;
   background: rgba(10,7,4,.80);
   display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; padding: 24px;
+  overflow-y: auto;   /* filet de sécurité : rien n'est jamais inatteignable */
 }
 .livre-ouvert.cache { display: none; }
 .zone-livre { width: min(46vw, 420px); height: min(70vh, 560px); display: flex; align-items: center; justify-content: center; }
 .zone-livre canvas { width: 100%; height: 100%; cursor: grab; touch-action: none; }
 .zone-livre canvas:active { cursor: grabbing; }
 .couv-2d { width: 240px; height: 340px; border-radius: 4px; background-size: cover; background-position: center; box-shadow: 0 12px 32px rgba(0,0,0,.6); display: flex; align-items: flex-end; padding: 10px; color: #fff; font-weight: bold; overflow: hidden; }
-.carte-infos { width: 320px; background: #1a110a; color: #eee; border-radius: 12px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,.6); border: 1px solid #4a3826; }
+.carte-infos { width: 320px; max-width: 100%; box-sizing: border-box; background: #1a110a; color: #eee; border-radius: 12px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,.6); border: 1px solid #4a3826; }
 .carte-infos h2 { margin: 0 0 2px; font-size: 22px; }
 .carte-infos .aut { color: #c9a880; margin: 0 0 16px; }
 .carte-infos p { margin: 6px 0; font-size: 15px; }
 .carte-infos .note { color: #b8860b; font-size: 18px; }
 .carte-infos .com { font-style: italic; color: #9a8a6a; margin-top: 14px; }
 .carte-infos .crayon { margin-top: 18px; background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+/* Mobile : colonne (livre au-dessus, carte dessous), canvas large, tout tient à l'écran.
+   La caméra (book3d.js) s'adapte au ratio du canvas : aucune rotation ne sort du cadre. */
+@media (max-width: 700px) {
+  .livre-ouvert { flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; gap: 12px; padding: 3vh 16px 20px; padding-top: 3dvh; }
+  .zone-livre { width: min(88vw, 360px); height: 48vh; height: min(48dvh, 430px); flex-shrink: 0; }
+  .carte-infos { width: min(92vw, 380px); padding: 16px 18px; }
+  .carte-infos h2 { font-size: 19px; }
+  .carte-infos .aut { margin-bottom: 10px; }
+}
 
 .vide { padding: 40px; text-align: center; color: #b59a78; }
 

@@ -13,10 +13,19 @@
   <script src="./config.js"></script><!-- SUPABASE_URL pour la fonction cover (F1) -->
   <script type="module">
     import { ouvrir } from './book3d.js';
+    const overlay = document.getElementById('livre-ouvert');
     const zone = document.createElement('div');
     zone.className = 'zone-livre';
-    document.getElementById('livre-ouvert').appendChild(zone);
-    // Sans ISBN : couverture générée (déterministe, pas de réseau). ?isbn=... pour tester OpenLibrary.
+    overlay.appendChild(zone);
+    // Carte d'infos factice (mêmes classes que shelf.js) pour tester la mise en page complète.
+    const carte = document.createElement('div');
+    carte.className = 'carte-infos';
+    carte.innerHTML = '<h2>L\'Apprenti assassin</h2><p class="aut">Robin Hobb · 1998</p>'
+      + '<p>Saga : L\'Assassin royal · Tome 1</p><p>Statut : Lu · Possédé ✓</p>'
+      + '<p class="note">★★★★★</p><p class="com">« Excellent premier tome. »</p>'
+      + '<button class="crayon">✏️ Modifier</button>';   // données factices locales (pas d'injection)
+    overlay.appendChild(carte);
+    // Sans ISBN : couverture générée (déterministe, pas de réseau). ?isbn=... pour tester la fonction cover.
     const isbn = new URLSearchParams(location.search).get('isbn') || '';
     ouvrir(zone, { titre: "L'Apprenti assassin", isbn, couleur: '#6e3b2c' });
   </script>

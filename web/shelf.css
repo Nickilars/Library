@@ -93,3 +93,18 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 .form-actions button[type=submit] { background: #c9a880; color: #1a110a; font-weight: 600; }
 .btn-supprimer { background: #7a2a2a; color: #fff; }
 #btn-annuler { background: #2b1d12; color: #c9a880; border: 1px solid #5a4a35; }
+
+/* C2 — recherche par ISBN dans la modale */
+.ligne-isbn { display: flex; gap: 8px; }
+.ligne-isbn #f-isbn { flex: 1; }
+.btn-isbn {
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid #5a4a35;
+  border-radius: 6px;
+  background: #2b1d12;
+  color: #c9a880;
+  padding: 8px 12px;
+}
+.btn-isbn:hover { background: #3a2a1f; }
+.isbn-statut { margin: 4px 0 0; min-height: 1.2em; font-size: 0.85em; color: #9a8a6a; }

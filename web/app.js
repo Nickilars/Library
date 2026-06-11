@@ -150,6 +150,8 @@ function ouvrirModale(livre) {
   champ('f-note').value = (livre && livre.note != null) ? livre.note : '';
   champ('f-commentaire').value = livre ? (livre.commentaire || '') : '';
   elFormErreur.hidden = true;
+  const elIsbnStatut = document.getElementById('isbn-statut');
+  if (elIsbnStatut) elIsbnStatut.textContent = '';
   elBtnSupprimer.hidden = !livre;
   elModale.classList.remove('cache');
 }
@@ -212,6 +214,14 @@ elBtnSupprimer.addEventListener('click', async () => {
 
 document.getElementById('btn-ajouter').addEventListener('click', () => ouvrirModale(null));
 document.getElementById('btn-annuler').addEventListener('click', fermerModale);
+
+// ---------- Recherche par ISBN (C2) ----------
+// Exposé pour isbn.js (script classique). Renvoie { trouve, livre? } ou lève en cas d'erreur réseau.
+window.lookupIsbn = async (isbn) => {
+  const { data, error } = await client.functions.invoke('lookup', { body: { isbn } });
+  if (error) throw error;
+  return data;
+};
 
 // ---------- Démarrage ----------
 (async function init() {

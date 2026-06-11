@@ -64,17 +64,17 @@ Deno.serve(async (req: Request) => {
   if (!isbnValide(isbn)) return erreur(cors, { erreur: "isbn_invalide" }, 400);
 
   try {
-    // 1. OpenLibrary (404 si absent grâce à default=false)
-    let image = await imageDepuis(urlOpenLibrary(isbn));
-
-    // 2. BnF : notice SRU -> ark -> vignette
-    if (!image) {
+    // OL et BnF en PARALLÈLE (les éditions françaises manquent souvent chez OL :
+    // attendre son 404 avant d'interroger la BnF doublait la latence). OL prioritaire.
+    const chercherBnf = async () => {
       const sru = await fetchAvecTimeout(urlBnfSru(isbn));
       const ark = sru && sru.ok ? extraireArk(await sru.text()) : null;
-      if (ark) image = await imageDepuis(urlBnfCouverture(ark));
-    }
+      return ark ? await imageDepuis(urlBnfCouverture(ark)) : null;
+    };
+    const [ol, bnf] = await Promise.all([imageDepuis(urlOpenLibrary(isbn)), chercherBnf()]);
+    let image = ol || bnf;
 
-    // 3. Amazon par ISBN-10 (978 uniquement)
+    // Amazon par ISBN-10 (978 uniquement) en dernier recours
     if (!image) {
       const isbn10 = isbn13Vers10(isbn);
       if (isbn10) image = await imageDepuis(urlAmazon(isbn10));

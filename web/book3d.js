@@ -26,7 +26,7 @@ function texEnvironnement() {
   const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512;
   const x = cv.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0, '#6b5a45'); g.addColorStop(0.55, '#3a2c1e'); g.addColorStop(1, '#14100b');
+  g.addColorStop(0, '#a08a6a'); g.addColorStop(0.55, '#5a4632'); g.addColorStop(1, '#241c12');
   x.fillStyle = g; x.fillRect(0, 0, 1024, 512);
   for (const [cx, cy, r] of [[256, 150, 110], [768, 130, 90], [512, 90, 60]]) {
     const f = x.createRadialGradient(cx, cy, 0, cx, cy, r);
@@ -165,7 +165,7 @@ function init(canvas) {
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.55;
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
@@ -177,9 +177,9 @@ function init(canvas) {
   pmrem.dispose();
   scene.add(ombreContact());
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.25));
-  const key = new THREE.DirectionalLight(0xfff2e0, 0.9); key.position.set(3, 4, 5); scene.add(key);
-  const fill = new THREE.DirectionalLight(0x99bbff, 0.2); fill.position.set(-4, 1, 2); scene.add(fill);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  const key = new THREE.DirectionalLight(0xfff2e0, 1.6); key.position.set(2, 4, 6); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x99bbff, 0.35); fill.position.set(-4, 1, 2); scene.add(fill);
 
   livre = construireLivre();
   scene.add(livre);

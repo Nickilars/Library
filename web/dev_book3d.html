@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<!-- Page d'essai du livre 3D (dev) : données factices, sans Supabase ni login.
+     Usage : servir web/ puis ouvrir /dev_book3d.html (ou ?isbn=9780553573404 pour une vraie couverture). -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Essai livre 3D</title>
+  <link rel="stylesheet" href="./shelf.css">
+  <style>body { margin: 0; } .livre-ouvert { background: #1a110a; }</style>
+</head>
+<body>
+  <div id="livre-ouvert" class="livre-ouvert"></div>
+  <script type="module">
+    import { ouvrir } from './book3d.js';
+    const zone = document.createElement('div');
+    zone.className = 'zone-livre';
+    document.getElementById('livre-ouvert').appendChild(zone);
+    // Sans ISBN : couverture générée (déterministe, pas de réseau). ?isbn=... pour tester OpenLibrary.
+    const isbn = new URLSearchParams(location.search).get('isbn') || '';
+    ouvrir(zone, { titre: "L'Apprenti assassin", isbn, couleur: '#6e3b2c' });
+  </script>
+</body>
+</html>

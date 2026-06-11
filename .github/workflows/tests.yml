@@ -17,3 +17,5 @@ jobs:
         run: node web/test_shelf_logic.mjs
       - name: Tests recherche ISBN
         run: node web/test_lookup_core.mjs
+      - name: Tests logique scan
+        run: node web/test_scan_logic.mjs

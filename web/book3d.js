@@ -225,22 +225,29 @@ function animer(now) {
   rafId = requestAnimationFrame(animer);
 }
 
+let jetonCouverture = 0;   // anti-course : seule la demande la plus récente s'applique
+
 function appliquerCouverture(d) {
+  const jeton = ++jetonCouverture;
+  // Couverture générée affichée IMMÉDIATEMENT : jamais de reliquat du livre précédent
+  // pendant le chargement réseau ; la vraie couverture la remplace quand elle arrive.
+  matCouv.map = couvGeneree(d.titre, d.couleur); matCouv.color.set(0xffffff); matCouv.needsUpdate = true;
   const isbn = (d.isbn || '').trim();
-  if (isbn) {
-    // Fonction Edge "cover" (F1) : OpenLibrary -> BnF -> Amazon, avec CORS pour WebGL.
-    const url = `${window.SUPABASE_URL}/functions/v1/cover?isbn=${isbn}`;
-    const chargeur = new THREE.TextureLoader();
-    chargeur.crossOrigin = 'anonymous';
-    chargeur.load(
-      url,
-      tex => { tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace; matCouv.map = tex; matCouv.color.set(0xffffff); matCouv.needsUpdate = true; },
-      undefined,
-      () => { matCouv.map = couvGeneree(d.titre, d.couleur); matCouv.color.set(0xffffff); matCouv.needsUpdate = true; }
-    );
-  } else {
-    matCouv.map = couvGeneree(d.titre, d.couleur); matCouv.color.set(0xffffff); matCouv.needsUpdate = true;
-  }
+  if (!isbn) return;
+  // Fonction Edge "cover" (F1) : OpenLibrary/BnF/Amazon, avec CORS pour WebGL.
+  const url = `${window.SUPABASE_URL}/functions/v1/cover?isbn=${isbn}`;
+  const chargeur = new THREE.TextureLoader();
+  chargeur.crossOrigin = 'anonymous';
+  chargeur.load(
+    url,
+    tex => {
+      if (jeton !== jetonCouverture) return;   // un autre livre a été ouvert entre-temps
+      tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace;
+      matCouv.map = tex; matCouv.needsUpdate = true;
+    },
+    undefined,
+    () => { /* échec réseau/404 : on garde la couverture générée déjà affichée */ }
+  );
 }
 
 export function ouvrir(conteneur, d) {

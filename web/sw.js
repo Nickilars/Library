@@ -1,6 +1,6 @@
 // Service worker : met en cache la coquille statique (same-origin) pour la lecture hors-ligne.
 // Les données Supabase (cross-origin) sont gérées au niveau de app.js (localStorage), pas ici.
-const CACHE = 'biblio-v5';
+const CACHE = 'biblio-v6';
 const COQUILLE = [
   './', './index.html', './config.js', './app.js', './shelf.js', './isbn.js', './shelf-logic.mjs',
   './scan.js', './scan-logic.mjs',
@@ -10,7 +10,11 @@ const COQUILLE = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(COQUILLE)).then(() => self.skipWaiting())
+    // cache:'reload' force le réseau : sans lui, addAll passe par le cache HTTP du
+    // navigateur et un nouveau SW peut précacher d'anciens fichiers (max-age Pages).
+    caches.open(CACHE)
+      .then(c => c.addAll(COQUILLE.map(u => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   );
 });
 

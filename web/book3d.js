@@ -2,8 +2,15 @@
 // Visionneuse persistante (un seul contexte WebGL) réutilisée entre ouvertures.
 import * as THREE from './vendor/three.module.js';
 
-const W = 1.7, H = 2.4, T = 0.55;   // dimensions du livre (épais)
-let renderer, scene, camera, livre, matCouv, rafId = null, actif = false;
+// ---- Anatomie du relié (unités scène) — voir le plan E1 pour le schéma ----
+const PAGES_L = 1.68, PAGES_H = 2.40, PAGES_E = 0.42;   // bloc de pages
+const PLAT_E = 0.07;                                     // épaisseur d'un plat
+const PLAT_X0 = -0.80, PLAT_X1 = 0.90;                   // gorge 0.05, débord gouttière 0.07
+const PLAT_H = 2.52, PLAT_R = 0.07;                      // débord tête/pied, coins arrondis
+const DOS_X = -0.85, DOS_R = 0.28, DOS_BOMBE = 0.46;     // demi-cylindre aplati
+const JEU = 0.005;                                       // évite plats/pages coplanaires
+
+let renderer, scene, camera, livre, matCouv, matRel, rafId = null, actif = false;
 let cibleY = -0.5, cibleX = 0.18, drag = false, lastX = 0, lastY = 0, libre = true, t0 = 0;
 
 export function webglDisponible() {
@@ -47,14 +54,94 @@ function ombreContact() {
   return m;
 }
 
-// Texture de tranche : fines lignes pour évoquer les pages
-function texTranche() {
-  const cv = document.createElement('canvas'); cv.width = 64; cv.height = 512;
+// Tranches de pages : fines lignes empilées dans l'axe d'empilement réel des pages
+// (verticales pour la gouttière où u suit z, horizontales pour tête/pied où v suit z).
+function texPages(verticales) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
   const x = cv.getContext('2d');
-  x.fillStyle = '#efe6d0'; x.fillRect(0, 0, 64, 512);
+  x.fillStyle = '#efe6d0'; x.fillRect(0, 0, 256, 256);
   x.strokeStyle = '#d8ccae'; x.lineWidth = 1;
-  for (let y = 2; y < 512; y += 3) { x.beginPath(); x.moveTo(0, y); x.lineTo(64, y); x.stroke(); }
+  for (let p = 1; p < 256; p += 3) {
+    x.beginPath();
+    if (verticales) { x.moveTo(p, 0); x.lineTo(p, 256); }
+    else { x.moveTo(0, p); x.lineTo(256, p); }
+    x.stroke();
+  }
   return new THREE.CanvasTexture(cv);
+}
+
+// Plat de couverture (vue de face) : coins arrondis côté gouttière, droits côté dos.
+function formePlat() {
+  const s = new THREE.Shape();
+  const y = PLAT_H / 2, r = PLAT_R;
+  s.moveTo(PLAT_X0, -y);
+  s.lineTo(PLAT_X1 - r, -y);
+  s.quadraticCurveTo(PLAT_X1, -y, PLAT_X1, -y + r);
+  s.lineTo(PLAT_X1, y - r);
+  s.quadraticCurveTo(PLAT_X1, y, PLAT_X1 - r, y);
+  s.lineTo(PLAT_X0, y);
+  s.closePath();
+  return s;
+}
+
+// Remappe les UV des faces du plat sur [0,1]² (boîte englobante) pour plaquer la jaquette.
+// Les flancs utilisent le matériau « reliure » sans map → leurs UV sont indifférents.
+function normaliserUV(geom) {
+  geom.computeBoundingBox();
+  const bb = geom.boundingBox;
+  const uv = geom.attributes.uv, pos = geom.attributes.position;
+  for (let i = 0; i < uv.count; i++) {
+    uv.setXY(i,
+      (pos.getX(i) - bb.min.x) / (bb.max.x - bb.min.x),
+      (pos.getY(i) - bb.min.y) / (bb.max.y - bb.min.y));
+  }
+  uv.needsUpdate = true;
+}
+
+// Assemble le livre relié : plats extrudés, dos demi-cylindre, bloc de pages en retrait.
+function construireLivre() {
+  const g = new THREE.Group();
+
+  matCouv = new THREE.MeshPhysicalMaterial({
+    color: 0x888888, roughness: 0.42, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.35,
+  });
+  // Reliure (dos + plat arrière + flancs) : recolorée par appliquerReliure (couleurTranche).
+  matRel = new THREE.MeshPhysicalMaterial({ color: 0x3a2233, roughness: 0.55, metalness: 0 });
+
+  const geoPlat = new THREE.ExtrudeGeometry(formePlat(), { depth: PLAT_E, bevelEnabled: false });
+  geoPlat.translate(0, 0, -PLAT_E / 2);
+  normaliserUV(geoPlat);
+
+  const platAvant = new THREE.Mesh(geoPlat, [matCouv, matRel]);   // [faces, flancs]
+  platAvant.position.z = PAGES_E / 2 + PLAT_E / 2 + JEU;
+  const platArriere = new THREE.Mesh(geoPlat, matRel);
+  platArriere.position.z = -(PAGES_E / 2 + PLAT_E / 2 + JEU);
+
+  const dos = new THREE.Mesh(
+    new THREE.CylinderGeometry(DOS_R, DOS_R, PLAT_H, 24, 1, false, Math.PI, Math.PI),
+    matRel
+  );
+  dos.scale.x = DOS_BOMBE;
+  dos.position.x = DOS_X;
+
+  const creme = new THREE.MeshStandardMaterial({ color: 0xefe6d0, roughness: 1 });
+  const matGouttiere = new THREE.MeshStandardMaterial({ map: texPages(true), roughness: 1 });
+  const matTete = new THREE.MeshStandardMaterial({ map: texPages(false), roughness: 1 });
+  const pages = new THREE.Mesh(
+    new THREE.BoxGeometry(PAGES_L, PAGES_H, PAGES_E),
+    [matGouttiere, creme, matTete, matTete, creme, creme]   // +x −x +y −y +z −z
+  );
+  pages.position.x = DOS_X + PAGES_L / 2;                   // collé au dos, en retrait de la gouttière
+
+  g.add(platAvant, platArriere, dos, pages);
+  return g;
+}
+
+// Continuité visuelle étagère → détail : la reliure reprend la couleur de la tranche.
+function appliquerReliure(couleur) {
+  const c = new THREE.Color(couleur || '#3a2233');
+  c.offsetHSL(0, 0, -0.05);
+  matRel.color.copy(c);
 }
 
 // Couverture générée (repli) : aplat de couleur + titre
@@ -70,7 +157,7 @@ function couvGeneree(titre, couleur) {
     else ligne += ' ' + m;
   }
   if (ligne.trim()) x.fillText(ligne.trim(), 36, y);
-  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; return t;
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 4; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
 function init(canvas) {
@@ -94,12 +181,7 @@ function init(canvas) {
   const key = new THREE.DirectionalLight(0xfff2e0, 0.9); key.position.set(3, 4, 5); scene.add(key);
   const fill = new THREE.DirectionalLight(0x99bbff, 0.2); fill.position.set(-4, 1, 2); scene.add(fill);
 
-  matCouv = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.55, metalness: 0.08 });
-  const matDos = new THREE.MeshStandardMaterial({ color: 0x2b1d12, roughness: 0.6 });
-  const matReliure = new THREE.MeshStandardMaterial({ color: 0x3a2233, roughness: 0.7 });
-  const matPages = new THREE.MeshStandardMaterial({ map: texTranche(), roughness: 1 });
-  const mats = [matPages, matReliure, matPages, matPages, matCouv, matDos];
-  livre = new THREE.Mesh(new THREE.BoxGeometry(W, H, T), mats);
+  livre = construireLivre();
   scene.add(livre);
 
   canvas.addEventListener('pointerdown', e => { drag = true; libre = false; lastX = e.clientX; lastY = e.clientY; });
@@ -142,7 +224,7 @@ function appliquerCouverture(d) {
     chargeur.crossOrigin = 'anonymous';
     chargeur.load(
       url,
-      tex => { tex.anisotropy = 4; matCouv.map = tex; matCouv.color.set(0xffffff); matCouv.needsUpdate = true; },
+      tex => { tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace; matCouv.map = tex; matCouv.color.set(0xffffff); matCouv.needsUpdate = true; },
       undefined,
       () => { matCouv.map = couvGeneree(d.titre, d.couleur); matCouv.color.set(0xffffff); matCouv.needsUpdate = true; }
     );
@@ -160,6 +242,7 @@ export function ouvrir(conteneur, d) {
   conteneur.appendChild(renderer.domElement);
   cibleY = -0.5; cibleX = 0.18; libre = true;
   livre.rotation.set(0.18, -0.5, 0);
+  appliquerReliure(d.couleur);
   appliquerCouverture(d);
   redimensionner();
   if (!actif) { actif = true; t0 = performance.now(); rafId = requestAnimationFrame(animer); }

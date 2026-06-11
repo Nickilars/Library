@@ -1,5 +1,6 @@
 // Frontend Supabase : auth, lecture (RLS), rendu, cache hors-ligne (B2), et écriture (C1).
 import { grouperLivres, couleurTranche, validerLivre } from './shelf-logic.mjs';
+import { livreDepuisScan } from './scan-logic.mjs';
 
 const client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
@@ -214,6 +215,51 @@ elBtnSupprimer.addEventListener('click', async () => {
 
 document.getElementById('btn-ajouter').addEventListener('click', () => ouvrirModale(null));
 document.getElementById('btn-annuler').addEventListener('click', fermerModale);
+
+// ---------- Scan en rafale (D2) ----------
+// Insertion directe d'un livre scanné. Renvoie { ok, raison?, titre? } — pas d'exception.
+window.ajouterLivreScan = async (livreLookup, isbn) => {
+  const v = validerLivre(livreDepuisScan(livreLookup, isbn));
+  if (!v.ok) return { ok: false, raison: v.erreur };
+  const dup = doublon(v.livre);
+  if (dup) return { ok: false, raison: 'doublon', titre: dup.titre };
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) return { ok: false, raison: 'session' };
+  const { data, error } = await client.from('books')
+    .insert({ ...v.livre, user_id: session.user.id }).select().single();
+  if (error) return { ok: false, raison: error.message };
+  livresCharges.push(data);                 // dédup à jour pendant la session de scan
+  return { ok: true, titre: data.titre };
+};
+
+// Bouton « Scanner une pile » : visible si scan dispo (scan.js est exécuté avant app.js).
+(async () => {
+  const btn = document.getElementById('btn-scan-pile');
+  if (!(window.scanDisponible && await window.scanDisponible())) return;
+  btn.hidden = false;
+  btn.addEventListener('click', async () => {
+    if (!navigator.onLine) return;          // lookup + insert exigent le réseau
+    let ajoutes = 0;
+    try {
+      await window.demarrerScan({
+        continu: true,
+        surIsbn: async (isbn, ui) => {
+          ui.toast('Recherche ' + isbn + '…');
+          let resultat;
+          try { resultat = await window.lookupIsbn(isbn); }
+          catch (e) { ui.toast('Erreur de recherche — réessaie.', 'erreur'); return; }
+          if (!resultat || !resultat.trouve) { ui.toast('Introuvable : ' + isbn + ' — ajout manuel', 'erreur'); return; }
+          const r = await window.ajouterLivreScan(resultat.livre, isbn);
+          if (r.ok) { ajoutes++; ui.toast('Ajouté : ' + r.titre, 'ok'); }
+          else if (r.raison === 'doublon') ui.toast('Déjà dans la collection : ' + r.titre, 'erreur');
+          else if (r.raison === 'session') ui.toast('Session expirée — reconnecte-toi.', 'erreur');
+          else ui.toast('Échec : ' + r.raison, 'erreur');
+        },
+        surFermeture: async () => { if (ajoutes > 0) await chargerLivres(); },  // un seul rechargement
+      });
+    } catch (e) { /* caméra refusée : overlay déjà fermé */ }
+  });
+})();
 
 // ---------- Recherche par ISBN (C2) ----------
 // Exposé pour isbn.js (script classique). Renvoie { trouve, livre? } ou lève en cas d'erreur réseau.

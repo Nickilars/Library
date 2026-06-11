@@ -1,0 +1,21 @@
+name: Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests logique étagère
+        run: node web/test_shelf_logic.mjs
+      - name: Tests recherche ISBN
+        run: node web/test_lookup_core.mjs
+      - name: Tests logique scan
+        run: node web/test_scan_logic.mjs

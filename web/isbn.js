@@ -33,3 +33,20 @@ async function rechercherIsbn() {
 }
 
 document.getElementById('btn-isbn').addEventListener('click', rechercherIsbn);
+
+// --- Scan caméra (D1) : remplit l'ISBN puis lance la recherche C2 ---
+// Le bouton est révélé par scan.js (module) uniquement si BarcodeDetector + caméra dispo.
+document.getElementById('btn-scan').addEventListener('click', async () => {
+  const statut = document.getElementById('isbn-statut');
+  try {
+    await window.demarrerScan({
+      continu: false,
+      surIsbn: async (isbn) => {
+        document.getElementById('f-isbn').value = isbn;
+        await rechercherIsbn();              // recherche C2 déclenchée automatiquement
+      },
+    });
+  } catch (e) {
+    statut.textContent = "Caméra indisponible ou refusée — saisis l'ISBN à la main.";
+  }
+});

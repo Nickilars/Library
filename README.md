@@ -23,5 +23,7 @@ Le workflow `.github/workflows/deploy-pages.yml` publie `web/` à chaque push su
 - Pense à désactiver les inscriptions publiques (Authentication) pour cette app mono-utilisateur.
 
 ## Tests
-- Fonctions pures : `node web/test_shelf_logic.mjs`.
-- Le reste se vérifie manuellement dans le navigateur (login → étagère → livre 3D).
+- Fonctions pures : `node web/test_shelf_logic.mjs`, `node web/test_lookup_core.mjs`,
+  `node web/test_scan_logic.mjs` (exécutés aussi en CI à chaque push/PR).
+- Le reste se vérifie manuellement dans le navigateur (login → étagère → livre 3D),
+  et sur Android pour le scan caméra (📷).

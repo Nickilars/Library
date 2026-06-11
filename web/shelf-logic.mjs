@@ -27,11 +27,26 @@ export function grouperLivres(livres) {
   return groupes;
 }
 
-export function couleurTranche(titre, auteur) {
+function graine(titre, auteur) {
   const s = `${titre}|${auteur}`;
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return hslVersHex(h % 360, 0.45, 0.38);
+  return h;
+}
+
+export function couleurTranche(titre, auteur) {
+  return hslVersHex(graine(titre, auteur) % 360, 0.45, 0.38);
+}
+
+// Apparence physique de la tranche sur l'étagère (E2) : hauteur/largeur variées,
+// ~1 livre sur 7 légèrement penché (±4°). Déterministe (même graine que la couleur).
+export function apparenceTranche(titre, auteur) {
+  const h2 = Math.imul(graine(titre, auteur), 2654435761) >>> 0;   // second mélange (décorrèle de la teinte)
+  const hauteur = 106 + (h2 % 19);                          // 106..124 px
+  const largeur = 22 + ((h2 >>> 5) % 13);                   // 22..34 px
+  const penche = (h2 >>> 9) % 7 === 0;
+  const inclinaison = penche ? (((h2 >>> 12) % 2) ? 4 : -4) : 0;
+  return { hauteur, largeur, inclinaison };
 }
 function hslVersHex(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * s;

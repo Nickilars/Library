@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Page d'essai de l'étagère (dev) : charge l'app en iframe, masque le login et
+     construit l'étagère avec une fausse collection (sans Supabase).
+     ?focus=1 simule la vue focalisée (niveau 1). Largeur mobile : via dev_cadre.html. -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Essai étagère</title>
+  <style>html, body { margin: 0; height: 100%; } iframe { border: 0; width: 100%; height: 100%; }</style>
+</head>
+<body>
+  <iframe id="cadre" src="./index.html"></iframe>
+  <script>
+    const FAUX = [];
+    const ajouter = (titre, auteur, saga, tome) => FAUX.push({ id: FAUX.length + 1, titre, auteur, saga, tome, statut_lecture: 'lu', possede: true });
+    ['L\'Apprenti assassin', 'L\'Assassin du roi', 'La Nef du crépuscule', 'Le Poison de la vengeance', 'La Voie magique', 'La Reine solitaire']
+      .forEach((t, i) => ajouter(t, 'Robin Hobb', "L'Assassin royal", i + 1));
+    ['Le Vaisseau magique', 'Le Navire aux esclaves', 'La Conquête de la liberté']
+      .forEach((t, i) => ajouter(t, 'Robin Hobb', 'Les Aventuriers de la mer', i + 1));
+    ['La Communauté de l\'anneau', 'Les Deux Tours', 'Le Retour du roi']
+      .forEach((t, i) => ajouter(t, 'J.R.R. Tolkien', 'Le Seigneur des anneaux', i + 1));
+    ajouter('Le Hobbit', 'J.R.R. Tolkien', null, null);
+    ajouter('Le Silmarillion', 'J.R.R. Tolkien', null, null);
+    ['Dune', 'Le Messie de Dune', 'Les Enfants de Dune'].forEach((t, i) => ajouter(t, 'Frank Herbert', 'Dune', i + 1));
+    ajouter('Fondation', 'Isaac Asimov', 'Fondation', 1);
+    ajouter('Fondation et Empire', 'Isaac Asimov', 'Fondation', 2);
+    ajouter('1984', 'George Orwell', null, null);
+    ajouter('La Ferme des animaux', 'George Orwell', null, null);
+
+    const params = new URLSearchParams(location.search);
+    document.getElementById('cadre').addEventListener('load', (e) => {
+      const w = e.target.contentWindow, d = e.target.contentDocument;
+      setTimeout(() => {
+        d.getElementById('login').hidden = true;
+        d.getElementById('etagere').hidden = false;
+        d.getElementById('controles').hidden = false;
+        w.construireEtagere(FAUX);
+        if (params.get('focus')) w.basculerSaga(d.querySelector('.saga[data-saga="L\'Assassin royal"] .saga-nom'));
+      }, 400);
+    });
+  </script>
+</body>
+</html>

@@ -211,6 +211,9 @@ function animer(now) {
   if (libre) cibleY = -0.5 + Math.sin(t * 0.5) * 0.35;
   livre.rotation.y += (cibleY - livre.rotation.y) * 0.08;
   livre.rotation.x += (cibleX - livre.rotation.x) * 0.08;
+  // Entrée en scène : échelle et hauteur convergent vers la pose de repos (même amorti).
+  livre.scale.setScalar(livre.scale.x + (1 - livre.scale.x) * 0.08);
+  livre.position.y += (0 - livre.position.y) * 0.08;
   redimensionner();
   renderer.render(scene, camera);
   rafId = requestAnimationFrame(animer);
@@ -241,7 +244,10 @@ export function ouvrir(conteneur, d) {
   }
   conteneur.appendChild(renderer.domElement);
   cibleY = -0.5; cibleX = 0.18; libre = true;
-  livre.rotation.set(0.18, -0.5, 0);
+  // Pose de départ de l'animation d'entrée (converge vers la pose de repos dans animer()).
+  livre.rotation.set(0.45, -1.4, 0);
+  livre.scale.setScalar(0.55);
+  livre.position.y = -0.6;
   appliquerReliure(d.couleur);
   appliquerCouverture(d);
   redimensionner();

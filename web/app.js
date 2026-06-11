@@ -74,6 +74,13 @@ function construireEtagere(livres) {
   for (const g of groupes) {
     const section = document.createElement('section'); section.className = 'auteur';
     const h2 = document.createElement('h2'); h2.className = 'auteur-nom'; h2.textContent = g.nom;
+    if (elRegroupement.value === 'auteur') {   // G2 : attribution groupée du genre
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'btn-genre-auteur'; btn.textContent = '🏷️';
+      btn.title = "Attribuer un genre à tous les livres de cet auteur";
+      btn.addEventListener('click', () => proposerGenreAuteur(g.nom, btn));
+      h2.appendChild(btn);
+    }
     section.appendChild(h2);
     for (const s of g.rangees) {
       const divS = document.createElement('div'); divS.className = 'saga'; divS.setAttribute('data-saga', s.nom);
@@ -120,6 +127,41 @@ function construireEtagere(livres) {
 }
 
 window.construireEtagere = construireEtagere;   // page d'essai dev_etagere.html
+
+// ---------- Attribution groupée du genre par auteur (G2) ----------
+// Le genre suit presque toujours l'auteur : on étiquette toute une œuvre d'un coup.
+function proposerGenreAuteur(auteur, btn) {
+  if (!navigator.onLine) { afficherBandeau(null); return; }
+  const sel = document.createElement('select');
+  sel.className = 'select-genre-auteur';
+  const o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Genre…';
+  sel.appendChild(o0);
+  for (const gn of GENRES) {
+    const o = document.createElement('option'); o.value = gn; o.textContent = gn;
+    sel.appendChild(o);
+  }
+  btn.replaceWith(sel);
+  sel.focus();
+  const restaurer = () => sel.replaceWith(btn);
+  sel.addEventListener('blur', () => { if (!sel.value) restaurer(); });
+  sel.addEventListener('change', async () => {
+    const genre = sel.value;
+    if (!genre) { restaurer(); return; }
+    const n = livresCharges.filter(b => (b.auteur || '').toLowerCase() === auteur.toLowerCase()).length;
+    if (!confirm(`Appliquer « ${genre} » aux ${n} livre(s) de ${auteur} ?\n(Remplace les genres déjà saisis pour cet auteur.)`)) {
+      restaurer(); return;
+    }
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) { restaurer(); alert('Session expirée, reconnecte-toi.'); return; }
+    // ilike sans joker = égalité insensible à la casse (cohérent avec le groupement).
+    // % et _ sont échappés (jokers ilike) — improbables dans un nom d'auteur, mais sûr.
+    const motif = auteur.replace(/[%_]/g, '\\$&');
+    const { error } = await client.from('books').update({ genre }).ilike('auteur', motif);
+    restaurer();
+    if (error) { alert("Échec de l'attribution : " + error.message); return; }
+    await chargerLivres();
+  });
+}
 
 // ---------- Regroupement (G1) ----------
 const elRegroupement = document.getElementById('regroupement');

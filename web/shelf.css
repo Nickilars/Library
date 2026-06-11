@@ -26,6 +26,13 @@ body {
   color: #c9a880; font-size: 15px; font-variant: small-caps; letter-spacing: .12em;
   margin: 0 0 10px; border-bottom: 1px solid #4a3826; padding-bottom: 4px;
 }
+/* G2 : attribution groupée du genre par auteur */
+.btn-genre-auteur { margin-left: 8px; background: transparent; border: none; cursor: pointer; font-size: 13px; opacity: .55; }
+.btn-genre-auteur:hover { opacity: 1; }
+.select-genre-auteur {
+  margin-left: 8px; padding: 2px 6px; font-size: 13px; font-variant: normal; letter-spacing: normal;
+  border-radius: 6px; border: 1px solid #5a4a35; background: #2b1d12; color: #eee;
+}
 .saga { margin-bottom: 22px; }
 .saga-nom { color: #b59a78; font-size: 13px; cursor: pointer; user-select: none; margin-bottom: 6px; }
 .saga-nom:hover { color: #fff; }

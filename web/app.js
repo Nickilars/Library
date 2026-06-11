@@ -1,5 +1,5 @@
 // Frontend Supabase : auth, lecture (RLS), rendu, cache hors-ligne (B2), et écriture (C1).
-import { grouperLivres, couleurTranche, validerLivre, apparenceTranche } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre, apparenceTranche, GENRES } from './shelf-logic.mjs';
 import { livreDepuisScan } from './scan-logic.mjs';
 
 const client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -18,6 +18,7 @@ const elBtnSupprimer = document.getElementById('btn-supprimer');
 
 const CLE_LIVRES = 'biblio:livres';
 const CLE_DATE = 'biblio:livres:date';
+const CLE_GROUPEMENT = 'biblio:groupement';   // G1 : critère « Grouper par » persisté
 
 let livresCharges = [];   // dernière liste chargée (pour pré-remplir l'édition + détecter les doublons)
 let editionId = null;     // null = ajout ; sinon id du livre en cours d'édition
@@ -65,24 +66,24 @@ async function chargerLivres() {
 
 function construireEtagere(livres) {
   elEtagere.replaceChildren();
-  const groupes = grouperLivres(livres);
+  const groupes = grouperLivres(livres, elRegroupement.value);
   if (!groupes.length) {
     const p = document.createElement('p'); p.className = 'vide'; p.textContent = 'Votre collection est vide.';
     elEtagere.appendChild(p); return;
   }
   for (const g of groupes) {
     const section = document.createElement('section'); section.className = 'auteur';
-    const h2 = document.createElement('h2'); h2.className = 'auteur-nom'; h2.textContent = g.auteur;
+    const h2 = document.createElement('h2'); h2.className = 'auteur-nom'; h2.textContent = g.nom;
     section.appendChild(h2);
-    for (const s of g.sagas) {
+    for (const s of g.rangees) {
       const divS = document.createElement('div'); divS.className = 'saga'; divS.setAttribute('data-saga', s.nom);
-      const nom = document.createElement('div'); nom.className = 'saga-nom'; nom.setAttribute('onclick', 'basculerSaga(this)');
-      nom.textContent = s.nom;
-      if (s.nom !== 'Aucune') {
+      if (s.nom !== 'Aucune') {   // 'Aucune' = rangée sans libellé (clic sur un livre pour focaliser)
+        const nom = document.createElement('div'); nom.className = 'saga-nom'; nom.setAttribute('onclick', 'basculerSaga(this)');
+        nom.textContent = s.nom;
         const c = document.createElement('span'); c.className = 'saga-compte'; c.textContent = ` (${s.livres.length})`;
         nom.appendChild(c);
+        divS.appendChild(nom);
       }
-      divS.appendChild(nom);
       const rangee = document.createElement('div'); rangee.className = 'rangee';
       for (const b of s.livres) {
         const livre = document.createElement('div'); livre.className = 'livre';
@@ -120,6 +121,25 @@ function construireEtagere(livres) {
 
 window.construireEtagere = construireEtagere;   // page d'essai dev_etagere.html
 
+// ---------- Regroupement (G1) ----------
+const elRegroupement = document.getElementById('regroupement');
+elRegroupement.value = localStorage.getItem(CLE_GROUPEMENT) || 'auteur';
+if (!elRegroupement.value) elRegroupement.value = 'auteur';   // valeur stockée inconnue
+elRegroupement.addEventListener('change', () => {
+  localStorage.setItem(CLE_GROUPEMENT, elRegroupement.value);
+  if (document.body.classList.contains('mode-focus')) quitterFocus();
+  construireEtagere(livresCharges);
+});
+
+// Options du sélecteur de genre de la modale (source unique : GENRES).
+{
+  const selGenre = document.getElementById('f-genre');
+  for (const gn of GENRES) {
+    const o = document.createElement('option'); o.value = gn; o.textContent = gn;
+    selGenre.appendChild(o);
+  }
+}
+
 // ---------- Connexion ----------
 elLogin.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -154,6 +174,7 @@ function ouvrirModale(livre) {
   champ('f-annee').value = livre ? (livre.annee_publication || '') : '';
   champ('f-isbn').value = livre ? (livre.isbn || '') : '';
   champ('f-saga').value = (livre && livre.saga && livre.saga !== 'Aucune') ? livre.saga : '';
+  champ('f-genre').value = livre ? (livre.genre || '') : '';
   champ('f-tome').value = (livre && livre.tome != null) ? livre.tome : '';
   champ('f-statut').value = livre ? (livre.statut_lecture || 'non_lu') : 'non_lu';
   champ('f-possede').checked = !!(livre && livre.possede);
@@ -192,6 +213,7 @@ elForm.addEventListener('submit', async (e) => {
     titre: champ('f-titre').value, auteur: champ('f-auteur').value,
     annee_publication: champ('f-annee').value, isbn: champ('f-isbn').value,
     saga: champ('f-saga').value, tome: champ('f-tome').value,
+    genre: champ('f-genre').value,
     statut_lecture: champ('f-statut').value,
     possede: champ('f-possede').checked, wishlist: champ('f-wishlist').checked,
     note: champ('f-note').value, commentaire: champ('f-commentaire').value,

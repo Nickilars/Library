@@ -28,6 +28,20 @@
     ajouter('1984', 'George Orwell', null, null);
     ajouter('La Ferme des animaux', 'George Orwell', null, null);
 
+    // G1 : métadonnées par auteur (genre, années/notes plausibles) pour les regroupements.
+    const META = {
+      'Robin Hobb': ['Fantasy', 1995], 'J.R.R. Tolkien': ['Fantasy', 1954],
+      'Frank Herbert': ['Science-fiction', 1965], 'Isaac Asimov': ['Science-fiction', 1951],
+      'George Orwell': ['Classique', 1945],
+    };
+    FAUX.forEach((b, i) => {
+      const m = META[b.auteur] || ['', null];
+      b.genre = m[0];
+      b.annee_publication = m[1] ? String(m[1] + (b.tome || 0)) : '';
+      b.note = i % 4 === 0 ? null : (i % 5) + 1;
+      b.statut_lecture = ['lu', 'en_cours', 'non_lu'][i % 3];
+    });
+
     const params = new URLSearchParams(location.search);
     document.getElementById('cadre').addEventListener('load', (e) => {
       const w = e.target.contentWindow, d = e.target.contentDocument;
@@ -35,6 +49,7 @@
         d.getElementById('login').hidden = true;
         d.getElementById('etagere').hidden = false;
         d.getElementById('controles').hidden = false;
+        if (params.get('groupe')) d.getElementById('regroupement').value = params.get('groupe');
         w.construireEtagere(FAUX);
         if (params.get('focus')) w.basculerSaga(d.querySelector('.saga[data-saga="L\'Assassin royal"] .saga-nom'));
       }, 400);

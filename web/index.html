@@ -20,6 +20,13 @@
         <button class="chip" data-statut="en_cours">En cours</button>
         <button class="chip" data-statut="lu">Lu</button>
       </div>
+      <select id="regroupement" title="Grouper l'étagère par…">
+        <option value="auteur">Par auteur</option>
+        <option value="genre">Par genre</option>
+        <option value="annee">Par année</option>
+        <option value="note">Par note</option>
+        <option value="statut">Par statut</option>
+      </select>
       <button id="btn-ajouter">➕ Ajouter</button>
       <button id="btn-scan-pile" hidden>📷 Scanner une pile</button>
       <button id="btn-deconnexion">Déconnexion</button>
@@ -98,14 +105,19 @@
         </div>
 
         <div class="rangee-champs">
+          <div class="champ">
+            <label for="f-genre">Genre</label>
+            <select id="f-genre"><option value="">—</option></select><!-- options : GENRES (app.js) -->
+          </div>
           <div class="champ petit">
             <label for="f-note">Note (0–5)</label>
             <input id="f-note" type="number" min="0" max="5" inputmode="numeric">
           </div>
-          <div class="champ cases">
-            <label class="case"><input id="f-possede" type="checkbox"> Possédé</label>
-            <label class="case"><input id="f-wishlist" type="checkbox"> Wishlist</label>
-          </div>
+        </div>
+
+        <div class="champ cases">
+          <label class="case"><input id="f-possede" type="checkbox"> Possédé</label>
+          <label class="case"><input id="f-wishlist" type="checkbox"> Wishlist</label>
         </div>
 
         <div class="champ">

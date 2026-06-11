@@ -22,7 +22,7 @@ async function fetchAvecTimeout(url: string, init: RequestInit = {}): Promise<Re
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ORIGINE,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
 };
 
 function reponse(corps: unknown, statut = 200): Response {

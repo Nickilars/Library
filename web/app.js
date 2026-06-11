@@ -1,5 +1,5 @@
 // Frontend Supabase : auth, lecture (RLS), rendu, cache hors-ligne (B2), et écriture (C1).
-import { grouperLivres, couleurTranche, validerLivre, apparenceTranche, GENRES } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre, apparenceTranche, GENRES, couleurDominante } from './shelf-logic.mjs';
 import { livreDepuisScan } from './scan-logic.mjs';
 
 const client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
@@ -48,6 +48,7 @@ async function chargerLivres() {
     } catch (e) { /* quota dépassé : on ignore le cache */ }
     masquerBandeau();
     construireEtagere(data);
+    calculerCouleursManquantes();   // G3 : en arrière-plan, sans bloquer l'affichage
     return;
   }
   const cache = localStorage.getItem(CLE_LIVRES);
@@ -105,13 +106,16 @@ function construireEtagere(livres) {
         livre.setAttribute('data-isbn', b.isbn || '');
         livre.setAttribute('data-commentaire', b.commentaire || '');
         livre.setAttribute('data-possede', b.possede ? '1' : '0');
-        livre.style.setProperty('--c', couleurTranche(b.titre, b.auteur));
+        // G3 : couleur dominante de la couverture si connue, sinon couleur dérivée du titre.
+        livre.style.setProperty('--c', b.couleur_couverture || couleurTranche(b.titre, b.auteur));
         const ap = apparenceTranche(b.titre, b.auteur);   // E2 : variations physiques
         livre.style.setProperty('--h', ap.hauteur + 'px');
         livre.style.setProperty('--l', ap.largeur + 'px');
         livre.style.setProperty('--rot', ap.inclinaison + 'deg');
         livre.setAttribute('onclick', 'choisirLivre(this)');
-        const t = document.createElement('span'); t.className = 'tranche-titre'; t.textContent = b.titre;
+        const t = document.createElement('span'); t.className = 'tranche-titre';
+        // G3 : numéro de tome avant le titre sur la tranche (sagas uniquement).
+        t.textContent = (b.saga && b.saga !== 'Aucune' && b.tome != null) ? `${b.tome}. ${b.titre}` : b.titre;
         livre.appendChild(t);
         rangee.appendChild(livre);
       }
@@ -127,6 +131,54 @@ function construireEtagere(livres) {
 }
 
 window.construireEtagere = construireEtagere;   // page d'essai dev_etagere.html
+
+// ---------- Couleur de tranche fidèle à la couverture (G3) ----------
+// Calculée une fois par livre puis stockée (couleur_couverture) : par lots discrets
+// pour ne pas mitrailler la fonction cover au premier chargement. Les livres sans
+// couverture reçoivent leur couleur de repli (stable, et stoppe les retentatives).
+const LOT_COULEURS = 15;
+let calculCouleursEnCours = false;
+
+function couleurDepuisCouverture(isbn) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';   // CORS fourni par la fonction cover -> canvas lisible
+    img.onload = () => {
+      try {
+        const cv = document.createElement('canvas'); cv.width = 24; cv.height = 24;
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, 24, 24);
+        resolve(couleurDominante(ctx.getImageData(0, 0, 24, 24).data));
+      } catch (e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = `${window.SUPABASE_URL}/functions/v1/cover?isbn=${isbn}`;
+  });
+}
+
+async function calculerCouleursManquantes() {
+  if (calculCouleursEnCours || !navigator.onLine) return;
+  const aFaire = livresCharges.filter(b => !b.couleur_couverture).slice(0, LOT_COULEURS);
+  if (!aFaire.length) return;
+  calculCouleursEnCours = true;
+  let reussites = 0;
+  try {
+    for (const b of aFaire) {
+      const isbn = (b.isbn || '').trim();
+      const hex = isbn ? await couleurDepuisCouverture(isbn) : null;
+      const couleur = hex || couleurTranche(b.titre, b.auteur);
+      const { error } = await client.from('books').update({ couleur_couverture: couleur }).eq('id', b.id);
+      if (error) break;   // session expirée / hors-ligne : on réessaiera au prochain chargement
+      b.couleur_couverture = couleur;
+      reussites++;
+      document.querySelectorAll(`.livre[data-id="${b.id}"]`).forEach(el => el.style.setProperty('--c', couleur));
+    }
+  } finally {
+    calculCouleursEnCours = false;
+  }
+  // Lot suivant seulement si celui-ci a progressé (pas de boucle sur erreur persistante).
+  if (reussites && livresCharges.some(b => !b.couleur_couverture)) calculerCouleursManquantes();
+}
 
 // ---------- Attribution groupée du genre par auteur (G2) ----------
 // Le genre suit presque toujours l'auteur : on étiquette toute une œuvre d'un coup.
@@ -270,7 +322,11 @@ elForm.addEventListener('submit', async (e) => {
     const { error } = await client.from('books').insert({ ...v.livre, user_id: session.user.id });
     if (error) { erreurForm("Échec de l'ajout : " + error.message); return; }
   } else {
-    const { error } = await client.from('books').update(v.livre).eq('id', editionId);
+    const maj = { ...v.livre };
+    // G3 : ISBN modifié -> la couleur de tranche sera recalculée au prochain chargement.
+    const avant = livresCharges.find(b => String(b.id) === String(editionId));
+    if (avant && (avant.isbn || '') !== v.livre.isbn) maj.couleur_couverture = null;
+    const { error } = await client.from('books').update(maj).eq('id', editionId);
     if (error) { erreurForm('Échec de la modification : ' + error.message); return; }
   }
   fermerModale();

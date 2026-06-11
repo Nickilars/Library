@@ -105,6 +105,57 @@ function hslVersHex(h, s, l) {
   return `#${hh(r)}${hh(g)}${hh(bb)}`;
 }
 
+// --- Couleur dominante d'une couverture (G3) ---
+// data : pixels RGBA (Uint8ClampedArray, p.ex. getImageData d'un canvas réduit).
+// Stratégie : ignorer les fonds blancs et les noirs (texte), pondérer chaque pixel
+// par saturation×luminosité, retenir la teinte (sur 12 secteurs) au poids cumulé le
+// plus fort, et ramener la couleur dans une plage de tranche lisible.
+export function couleurDominante(data) {
+  const bins = new Map();
+  let totR = 0, totG = 0, totB = 0, totN = 0;
+  for (let i = 0; i + 3 < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    if (a < 128) continue;
+    totR += r; totG += g; totB += b; totN++;
+    const max = Math.max(r, g, b) / 255, min = Math.min(r, g, b) / 255;
+    const v = max, s = max ? (max - min) / max : 0;
+    if (v > 0.92 && s < 0.15) continue;   // blancs (fonds, marges)
+    if (v < 0.12) continue;               // noirs (texte, ombres)
+    const poids = s * v + 0.01;
+    const cle = Math.floor(teinteDe(r, g, b) / 30) % 12;
+    const bin = bins.get(cle) || { poids: 0, r: 0, g: 0, b: 0 };
+    bin.poids += poids; bin.r += r * poids; bin.g += g * poids; bin.b += b * poids;
+    bins.set(cle, bin);
+  }
+  let meilleur = null;
+  for (const bin of bins.values()) if (!meilleur || bin.poids > meilleur.poids) meilleur = bin;
+  let r, g, b;
+  if (meilleur) { r = meilleur.r / meilleur.poids; g = meilleur.g / meilleur.poids; b = meilleur.b / meilleur.poids; }
+  else if (totN) { r = totR / totN; g = totG / totN; b = totB / totN; }   // couverture toute blanche/noire
+  else return null;
+  const [h, s, l] = rgbVersHsl(r, g, b);
+  // Plage « tranche » : jamais délavée ni illisible, cohérente avec couleurTranche.
+  return hslVersHex(h, Math.max(s, 0.18), Math.min(Math.max(l, 0.22), 0.55));
+}
+
+function teinteDe(r, g, b) {
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (!d) return 0;
+  let h;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+
+function rgbVersHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  const l = (max + min) / 2;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  return [teinteDe(r * 255, g * 255, b * 255), Math.min(s, 1), l];
+}
+
 // --- Validation d'un livre avant écriture (miroir de la Phase 1, SEC-2) ---
 const STATUTS_VALIDES = new Set(['non_lu', 'en_cours', 'lu']);
 const LONGUEUR_MAX = 500;

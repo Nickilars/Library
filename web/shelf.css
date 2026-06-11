@@ -82,32 +82,79 @@ body.mode-focus .saga.focalisee .tranche-titre { display: block; font-size: 13px
 #btn-ajouter { background: #2b1d12; border: 1px solid #5a4a35; color: #c9a880; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 .modale { position: fixed; inset: 0; z-index: 60; background: rgba(10,7,4,.8); display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modale.cache { display: none; }
-.form-edition { width: 340px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #1a110a; border: 1px solid #4a3826; border-radius: 12px; padding: 20px; }
-.form-edition h2 { margin: 0; color: #c9a880; font-size: 18px; }
-.form-edition input, .form-edition select, .form-edition textarea { padding: 8px; border-radius: 6px; border: 1px solid #5a4a35; background: #2b1d12; color: #eee; font: inherit; }
-.form-edition textarea { min-height: 60px; resize: vertical; }
-.form-edition label { color: #eee; font-size: 14px; display: flex; gap: 8px; align-items: center; }
-.form-erreur { color: #ff6b6b; margin: 0; }
-.form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-.form-actions button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; }
-.form-actions button[type=submit] { background: #c9a880; color: #1a110a; font-weight: 600; }
-.btn-supprimer { background: #7a2a2a; color: #fff; }
-#btn-annuler { background: #2b1d12; color: #c9a880; border: 1px solid #5a4a35; }
 
-/* C2 — recherche par ISBN dans la modale */
+/* Carte : en-tête et pied FIXES, seul le corps défile -> Enregistrer toujours visible. */
+.form-edition {
+  width: min(520px, 100%);
+  max-height: 92vh; max-height: 92dvh;
+  display: flex; flex-direction: column;
+  background: #1a110a; border: 1px solid #4a3826; border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 60px rgba(0,0,0,.6);
+}
+.form-entete { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 12px; border-bottom: 1px solid #33271a; }
+.form-edition h2 { margin: 0; color: #c9a880; font-size: 18px; }
+.btn-fermer { width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; border: 1px solid #5a4a35; background: #2b1d12; color: #c9a880; font-size: 15px; cursor: pointer; }
+.btn-fermer:hover { background: #3a2a1f; }
+
+.form-corps { padding: 14px 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Champs : label visible AU-DESSUS (les placeholders disparaissent à la saisie). */
+.champ { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.champ > label { color: #9a8a6a; font-size: 13px; }
+.champ.petit { flex: 0 0 116px; }
+.requis { color: #d98c5f; }
+.indice { color: #6e5d45; font-size: 12px; }
+.rangee-champs { display: flex; gap: 10px; }
+
+.form-edition input, .form-edition select, .form-edition textarea {
+  width: 100%; box-sizing: border-box; min-height: 40px;
+  padding: 9px 10px; border-radius: 8px; border: 1px solid #5a4a35;
+  background: #2b1d12; color: #eee; font: inherit;
+}
+.form-edition input:focus, .form-edition select:focus, .form-edition textarea:focus {
+  outline: none; border-color: #c9a880;
+}
+.form-edition textarea { min-height: 64px; resize: vertical; }
+.form-edition input[type=checkbox] { width: 18px; height: 18px; min-height: 0; accent-color: #c9a880; margin: 0; }
+
+.champ.cases { flex-direction: row; align-items: center; gap: 18px; align-self: flex-end; padding-bottom: 10px; }
+.case { display: flex; align-items: center; gap: 7px; color: #eee; font-size: 14px; cursor: pointer; }
+
+.form-erreur { color: #ff6b6b; margin: 0; }
+
+/* Pied d'actions : Enregistrer (primaire) à droite, Supprimer (danger) isolé à gauche. */
+.form-actions { display: flex; gap: 8px; align-items: center; padding: 12px 20px 16px; border-top: 1px solid #33271a; }
+.form-actions .espace { flex: 1; }
+.form-actions button { min-height: 42px; padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer; font: inherit; white-space: nowrap; }
+.form-actions button[type=submit] { background: #c9a880; color: #1a110a; font-weight: 600; padding: 9px 22px; }
+.form-actions button[type=submit]:hover { background: #dabb95; }
+.form-actions .btn-supprimer { background: transparent; color: #d96b6b; border: 1px solid #7a2a2a; }
+.form-actions .btn-supprimer:hover { background: #7a2a2a; color: #fff; }
+#btn-annuler { background: #2b1d12; color: #c9a880; border: 1px solid #5a4a35; }
+#btn-annuler:hover { background: #3a2a1f; }
+
+/* C2/D — bloc ISBN en tête : scanner ou saisir pour pré-remplir. */
+.bloc-isbn { display: flex; flex-direction: column; gap: 6px; background: #221710; border: 1px solid #33271a; border-radius: 10px; padding: 10px 12px; }
+.bloc-isbn > label { color: #9a8a6a; font-size: 13px; }
 .ligne-isbn { display: flex; gap: 8px; }
-.ligne-isbn #f-isbn { flex: 1; }
+.ligne-isbn #f-isbn { flex: 1; min-width: 0; }
 .btn-isbn {
-  white-space: nowrap;
-  cursor: pointer;
-  border: 1px solid #5a4a35;
-  border-radius: 6px;
-  background: #2b1d12;
-  color: #c9a880;
-  padding: 8px 12px;
+  flex-shrink: 0; white-space: nowrap; min-height: 40px; min-width: 44px;
+  cursor: pointer; border: 1px solid #5a4a35; border-radius: 8px;
+  background: #2b1d12; color: #c9a880; padding: 0 12px; font: inherit;
 }
 .btn-isbn:hover { background: #3a2a1f; }
-.isbn-statut { margin: 4px 0 0; min-height: 1.2em; font-size: 0.85em; color: #9a8a6a; }
+.isbn-statut { margin: 0; min-height: 1.2em; font-size: 0.85em; color: #9a8a6a; }
+
+/* Mobile : bottom sheet, boutons ISBN en icônes seules (cible 44px). */
+@media (max-width: 540px) {
+  .modale { padding: 0; align-items: flex-end; }
+  .form-edition { width: 100%; max-height: 94vh; max-height: 94dvh; border-radius: 16px 16px 0 0; border-left: none; border-right: none; border-bottom: none; }
+  .btn-texte { display: none; }
+  .btn-isbn { width: 44px; padding: 0; }
+  .champ.petit { flex-basis: 96px; }
+}
 
 /* --- Scan caméra (D) --- */
 .scan-overlay { position: fixed; inset: 0; background: #000; z-index: 60; }

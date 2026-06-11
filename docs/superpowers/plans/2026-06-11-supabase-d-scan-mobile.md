@@ -301,9 +301,22 @@ async function demarrerScan({ continu = false, surIsbn, surFermeture } = {}) {
   }, INTERVALLE_MS);
 }
 
+// Révèle le bouton D1 si le scan est possible (le D2 est révélé par app.js, module exécuté après).
+(async () => {
+  if (await scanDisponible()) {
+    const btn = document.getElementById('btn-scan');
+    if (btn) btn.hidden = false;
+  }
+})();
+
 window.scanDisponible = scanDisponible;
 window.demarrerScan = demarrerScan;
 ```
+
+> **Ordre de chargement** : `isbn.js` est un script **classique** exécuté avant les modules →
+> `window.scanDisponible` n'y existe pas encore. C'est donc `scan.js` qui révèle `#btn-scan`,
+> et `scan.js` est inclus **avant** `app.js` (les modules s'exécutent dans l'ordre du document)
+> pour qu'`app.js` puisse révéler `#btn-scan-pile`.
 
 - [ ] **Step 2: Boutons (masqués par défaut) + inclusion**
 
@@ -363,17 +376,13 @@ git commit -m "feat: D scan.js — overlay caméra + BarcodeDetector + arrêt sy
 **Files:**
 - Modify: `web/isbn.js`
 
-- [ ] **Step 1: Révéler le bouton si le scan est disponible, câbler**
+- [ ] **Step 1: Câbler le clic (le bouton est révélé par `scan.js`)**
 
 Ajouter à `web/isbn.js` :
 
 ```js
 // --- Scan caméra (D1) : remplit l'ISBN puis lance la recherche C2 ---
-(async () => {
-  const btn = document.getElementById('btn-scan');
-  if (window.scanDisponible && await window.scanDisponible()) btn.hidden = false;
-})();
-
+// Le bouton est révélé par scan.js (module) uniquement si BarcodeDetector + caméra dispo.
 document.getElementById('btn-scan').addEventListener('click', async () => {
   const statut = document.getElementById('isbn-statut');
   try {
@@ -389,10 +398,6 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
   }
 });
 ```
-
-> `scan.js` est un module (deferred), `isbn.js` un script classique : `window.scanDisponible`
-> peut ne pas être encore défini au premier tick — d'où le test `window.scanDisponible &&`
-> dans l'IIFE asynchrone (revérifié à l'usage du bouton, qui n'est visible que si dispo).
 
 - [ ] **Step 2: Vérification manuelle (téléphone Android, voir checklist Task 7)**
 

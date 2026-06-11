@@ -46,33 +46,82 @@
 
   <div id="modale-edition" class="modale cache">
     <form id="form-edition" class="form-edition">
-      <h2 id="form-titre-modale">Ajouter un livre</h2>
-      <input id="f-titre" placeholder="Titre *" required>
-      <input id="f-auteur" placeholder="Auteur *" required>
-      <input id="f-annee" placeholder="Année">
-      <div class="ligne-isbn">
-        <input id="f-isbn" placeholder="ISBN (13 chiffres)">
-        <button type="button" id="btn-isbn" class="btn-isbn">🔍 Rechercher</button>
-        <button type="button" id="btn-scan" class="btn-isbn" hidden>📷 Scanner</button>
+      <header class="form-entete">
+        <h2 id="form-titre-modale">Ajouter un livre</h2>
+        <button type="button" id="btn-fermer-modale" class="btn-fermer" title="Fermer (Échap)">✕</button>
+      </header>
+
+      <div class="form-corps">
+        <section class="bloc-isbn">
+          <label for="f-isbn">ISBN <span class="indice">— scanne ou saisis pour pré-remplir</span></label>
+          <div class="ligne-isbn">
+            <input id="f-isbn" inputmode="numeric" autocomplete="off" placeholder="13 chiffres">
+            <button type="button" id="btn-isbn" class="btn-isbn" title="Rechercher les infos du livre">🔍<span class="btn-texte"> Rechercher</span></button>
+            <button type="button" id="btn-scan" class="btn-isbn" title="Scanner le code-barres" hidden>📷<span class="btn-texte"> Scanner</span></button>
+          </div>
+          <p id="isbn-statut" class="isbn-statut"></p>
+        </section>
+
+        <div class="champ">
+          <label for="f-titre">Titre <span class="requis">*</span></label>
+          <input id="f-titre" required autocomplete="off">
+        </div>
+        <div class="champ">
+          <label for="f-auteur">Auteur <span class="requis">*</span></label>
+          <input id="f-auteur" required autocomplete="off">
+        </div>
+
+        <div class="rangee-champs">
+          <div class="champ">
+            <label for="f-saga">Saga</label>
+            <input id="f-saga" autocomplete="off">
+          </div>
+          <div class="champ petit">
+            <label for="f-tome">Tome</label>
+            <input id="f-tome" type="number" min="0" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="rangee-champs">
+          <div class="champ">
+            <label for="f-statut">Statut de lecture</label>
+            <select id="f-statut">
+              <option value="non_lu">À lire</option>
+              <option value="en_cours">En cours</option>
+              <option value="lu">Lu</option>
+            </select>
+          </div>
+          <div class="champ petit">
+            <label for="f-annee">Année</label>
+            <input id="f-annee" inputmode="numeric" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="rangee-champs">
+          <div class="champ petit">
+            <label for="f-note">Note (0–5)</label>
+            <input id="f-note" type="number" min="0" max="5" inputmode="numeric">
+          </div>
+          <div class="champ cases">
+            <label class="case"><input id="f-possede" type="checkbox"> Possédé</label>
+            <label class="case"><input id="f-wishlist" type="checkbox"> Wishlist</label>
+          </div>
+        </div>
+
+        <div class="champ">
+          <label for="f-commentaire">Commentaire</label>
+          <textarea id="f-commentaire" rows="3" placeholder="Ton avis, une citation…"></textarea>
+        </div>
+
+        <p id="form-erreur" class="form-erreur" hidden></p>
       </div>
-      <p id="isbn-statut" class="isbn-statut"></p>
-      <input id="f-saga" placeholder="Saga">
-      <input id="f-tome" type="number" min="0" placeholder="Tome">
-      <select id="f-statut">
-        <option value="non_lu">À lire</option>
-        <option value="en_cours">En cours</option>
-        <option value="lu">Lu</option>
-      </select>
-      <label><input id="f-possede" type="checkbox"> Possédé</label>
-      <label><input id="f-wishlist" type="checkbox"> Wishlist</label>
-      <input id="f-note" type="number" min="0" max="5" placeholder="Note (0–5)">
-      <textarea id="f-commentaire" placeholder="Commentaire"></textarea>
-      <p id="form-erreur" class="form-erreur" hidden></p>
-      <div class="form-actions">
-        <button type="submit">Enregistrer</button>
+
+      <footer class="form-actions">
         <button type="button" id="btn-supprimer" class="btn-supprimer" hidden>🗑️ Supprimer</button>
+        <span class="espace"></span>
         <button type="button" id="btn-annuler">Annuler</button>
-      </div>
+        <button type="submit">Enregistrer</button>
+      </footer>
     </form>
   </div>
 

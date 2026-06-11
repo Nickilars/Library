@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!-- Page d'essai de la modale d'édition (dev) : charge l'app dans une iframe et force
+     l'ouverture de la modale, sans login. ?scan=1 révèle le bouton 📷, ?edition=1 le mode
+     modification (Supprimer visible, champs remplis). -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Essai modale</title>
+  <style>html, body { margin: 0; height: 100%; } iframe { border: 0; width: 100%; height: 100%; }</style>
+</head>
+<body>
+  <iframe id="cadre" src="./index.html"></iframe>
+  <script>
+    const params = new URLSearchParams(location.search);
+    // ?w=390&h=844 : force la taille de l'iframe (simulateur mobile, fiable en headless).
+    if (params.get('w')) {
+      const c = document.getElementById('cadre');
+      c.style.width = params.get('w') + 'px';
+      c.style.height = (params.get('h') || '844') + 'px';
+    }
+    document.getElementById('cadre').addEventListener('load', (e) => {
+      const d = e.target.contentDocument;
+      setTimeout(() => {
+        d.getElementById('modale-edition').classList.remove('cache');
+        if (params.get('scan')) d.getElementById('btn-scan').hidden = false;
+        if (params.get('edition')) {
+          d.getElementById('form-titre-modale').textContent = 'Modifier le livre';
+          d.getElementById('btn-supprimer').hidden = false;
+          d.getElementById('f-titre').value = "L'Apprenti assassin";
+          d.getElementById('f-auteur').value = 'Robin Hobb';
+          d.getElementById('f-saga').value = "L'Assassin royal";
+          d.getElementById('f-tome').value = '1';
+          d.getElementById('f-isbn').value = '9782290424476';
+          d.getElementById('f-annee').value = '1998';
+          d.getElementById('f-note').value = '5';
+          d.getElementById('f-possede').checked = true;
+        }
+      }, 300);
+      // Debug visuel (?debug=1) : largeurs mesurées, lisibles dans une capture d'écran.
+      if (params.get('debug')) setTimeout(() => {
+        const f = d.querySelector('.form-edition').getBoundingClientRect();
+        const div = document.createElement('div');
+        div.style.cssText = 'position:fixed;top:0;left:0;z-index:99;background:#000;color:#0f0;font:bold 16px monospace;padding:4px;';
+        div.textContent = `vp=${d.documentElement.clientWidth} form=${Math.round(f.width)} droite=${Math.round(f.right)}`;
+        document.body.appendChild(div);
+      }, 600);
+    });
+  </script>
+</body>
+</html>

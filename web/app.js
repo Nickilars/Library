@@ -215,6 +215,10 @@ elBtnSupprimer.addEventListener('click', async () => {
 
 document.getElementById('btn-ajouter').addEventListener('click', () => ouvrirModale(null));
 document.getElementById('btn-annuler').addEventListener('click', fermerModale);
+document.getElementById('btn-fermer-modale').addEventListener('click', fermerModale);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !elModale.classList.contains('cache')) fermerModale();
+});
 
 // ---------- Scan en rafale (D2) ----------
 // Insertion directe d'un livre scanné. Renvoie { ok, raison?, titre? } — pas d'exception.

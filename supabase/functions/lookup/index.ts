@@ -3,7 +3,7 @@ import {
   nettoyerIsbn, isbnValide, normaliserOpenLibrary, parserUnimarc,
 } from "./lookup-core.mjs";
 
-const ORIGINE = "https://nrossaa.github.io"; // origine du site GitHub Pages (sans /Library/)
+const ORIGINE = "https://nickilars.github.io"; // origine du site GitHub Pages (sans /Library/)
 
 const TIMEOUT_MS = 5000;
 

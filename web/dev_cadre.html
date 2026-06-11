@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!-- Cadre d'essai générique (dev) : affiche une page locale dans une iframe de taille
+     exacte — simulateur mobile fiable en headless (qui ignore --window-size étroit).
+     Usage : dev_cadre.html?url=dev_book3d.html&w=390&h=844 -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadre d'essai</title>
+  <style>html, body { margin: 0; background: #555; } iframe { border: 0; display: block; }</style>
+</head>
+<body>
+  <iframe id="cadre"></iframe>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const url = p.get('url') || 'index.html';
+    if (/^https?:|^\/\//.test(url)) throw new Error('pages locales uniquement');
+    const c = document.getElementById('cadre');
+    c.style.width = (p.get('w') || '390') + 'px';
+    c.style.height = (p.get('h') || '844') + 'px';
+    c.src = './' + url;
+  </script>
+</body>
+</html>

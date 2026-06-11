@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { estIsbnScanne, antiRebond } from './scan-logic.mjs';
+import { estIsbnScanne, antiRebond, livreDepuisScan } from './scan-logic.mjs';
 
 // estIsbnScanne : EAN-13 préfixé 978/979 uniquement
 assert.strictEqual(estIsbnScanne('9782290424551'), true, '978 accepté');
@@ -24,4 +24,27 @@ assert.strictEqual(r.accepte, true, 'autre code accepté');
 r = antiRebond(A, r.etat, 9999);
 assert.strictEqual(r.accepte, true, 'même code après expiration accepté');
 
-console.log('OK : Task 1 (estIsbnScanne + antiRebond) passe.');
+// livreDepuisScan : payload d'insertion directe avec défauts « pile de livres possédés »
+const payload = livreDepuisScan(
+  { titre: " L'Apprenti assassin ", auteur: 'Robin Hobb', annee: 1998, saga: "L'Assassin royal", tome: '1' },
+  '9782290424551'
+);
+assert.strictEqual(payload.titre, "L'Apprenti assassin", 'titre trimé');
+assert.strictEqual(payload.auteur, 'Robin Hobb');
+assert.strictEqual(payload.annee_publication, '1998', 'année en chaîne (format formulaire)');
+assert.strictEqual(payload.isbn, '9782290424551');
+assert.strictEqual(payload.saga, "L'Assassin royal");
+assert.strictEqual(payload.tome, '1');
+assert.strictEqual(payload.statut_lecture, 'non_lu', 'défaut : à lire');
+assert.strictEqual(payload.possede, true, 'défaut : possédé');
+assert.strictEqual(payload.wishlist, false);
+assert.strictEqual(payload.note, '', 'note vide (normalisée par validerLivre)');
+assert.strictEqual(payload.commentaire, '');
+
+// champs lookup absents → vides (jamais undefined)
+const vide = livreDepuisScan({ titre: 'X', auteur: 'Y' }, '9791028110109');
+assert.strictEqual(vide.annee_publication, '');
+assert.strictEqual(vide.saga, '');
+assert.strictEqual(vide.tome, '');
+
+console.log('OK : Tasks 1-2 (scan-logic) passent.');

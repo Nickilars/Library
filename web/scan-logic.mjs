@@ -12,3 +12,22 @@ export function antiRebond(isbn, etat, maintenant, delaiMs = 3000) {
   const memeRecent = etat && etat.dernier === isbn && (maintenant - etat.depuis) < delaiMs;
   return { accepte: !memeRecent, etat: { dernier: isbn, depuis: maintenant } };
 }
+
+// Payload d'insertion D2 (format formulaire, normalisé ensuite par validerLivre).
+// Défauts « pile de livres physiques qu'on possède » : à lire, possédé, pas wishlist.
+export function livreDepuisScan(livreLookup, isbn) {
+  const l = livreLookup || {};
+  return {
+    titre: String(l.titre ?? '').trim(),
+    auteur: String(l.auteur ?? '').trim(),
+    annee_publication: l.annee != null && l.annee !== '' ? String(l.annee) : '',
+    isbn,
+    saga: String(l.saga ?? '').trim(),
+    tome: l.tome != null ? String(l.tome) : '',
+    statut_lecture: 'non_lu',
+    possede: true,
+    wishlist: false,
+    note: '',
+    commentaire: '',
+  };
+}

@@ -1,5 +1,13 @@
 import assert from 'node:assert';
-import { grouperLivres, couleurTranche, validerLivre, apparenceTranche } from './shelf-logic.mjs';
+import { grouperLivres, couleurTranche, validerLivre, apparenceTranche, couleurDominante } from './shelf-logic.mjs';
+
+// Fabrique un tableau RGBA à partir de [r,g,b,n] répétés.
+function pixels(...blocs) {
+  const sortie = [];
+  for (const [r, g, b, n] of blocs) for (let i = 0; i < n; i++) sortie.push(r, g, b, 255);
+  return new Uint8ClampedArray(sortie);
+}
+function canal(hex, i) { return parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16); }
 
 // couleurTranche : déterministe + format #rrggbb + variabilité
 const c1 = couleurTranche('Dune', 'Herbert');
@@ -101,5 +109,27 @@ assert.ok(penches > 5 && penches < 80, `inclinés ~1/7 (${penches}/200)`);
 // variabilité : deux livres différents ne partagent pas toute leur apparence
 const a2 = apparenceTranche('Le Hobbit', 'Tolkien');
 assert.notDeepStrictEqual(a1, a2, 'apparences distinctes');
+
+// couleurDominante (G3) : la teinte dominante « utile » de la couverture
+// format hex
+const rouge = couleurDominante(pixels([200, 30, 30, 100]));
+assert.match(rouge, /^#[0-9a-f]{6}$/, 'format hex');
+assert.ok(canal(rouge, 0) > canal(rouge, 1) && canal(rouge, 0) > canal(rouge, 2), 'rouge dominant');
+// les fonds blancs et le texte noir sont ignorés
+const bleuSurBlanc = couleurDominante(pixels([250, 250, 250, 300], [10, 10, 10, 100], [40, 60, 190, 80]));
+assert.ok(canal(bleuSurBlanc, 2) > canal(bleuSurBlanc, 0), 'bleu malgré fond blanc + texte noir');
+// majorité verte vs minorité rouge -> vert
+const vert = couleurDominante(pixels([40, 160, 60, 120], [180, 40, 40, 40]));
+assert.ok(canal(vert, 1) > canal(vert, 0), 'teinte majoritaire retenue');
+// couverture entièrement sombre -> moyenne assombrie, pas null
+const sombre = couleurDominante(pixels([15, 12, 10, 100]));
+assert.match(sombre, /^#[0-9a-f]{6}$/, 'sombre : repli moyenne');
+// transparent / vide -> null
+assert.strictEqual(couleurDominante(new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 0])), null, 'transparent -> null');
+assert.strictEqual(couleurDominante(new Uint8ClampedArray([])), null, 'vide -> null');
+// la couleur est ramenée dans une plage de tranche lisible (ni blanc pur ni noir pur)
+const clair = couleurDominante(pixels([255, 80, 80, 100]));
+const lum = (canal(clair, 0) + canal(clair, 1) + canal(clair, 2)) / 3;
+assert.ok(lum > 30 && lum < 200, `luminosité bornée (${lum})`);
 
 console.log('OK : tests shelf-logic passent.');

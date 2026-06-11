@@ -110,12 +110,18 @@ function construireLivre() {
 
   const geoPlat = new THREE.ExtrudeGeometry(formePlat(), { depth: PLAT_E, bevelEnabled: false });
   geoPlat.translate(0, 0, -PLAT_E / 2);
-  normaliserUV(geoPlat);
 
-  const platAvant = new THREE.Mesh(geoPlat, [matCouv, matRel]);   // [faces, flancs]
+  // Plats entièrement en reliure (l'intérieur ne doit PAS montrer la jaquette) ;
+  // la jaquette est une face dédiée plaquée sur l'extérieur du plat avant uniquement.
+  const platAvant = new THREE.Mesh(geoPlat, matRel);
   platAvant.position.z = PAGES_E / 2 + PLAT_E / 2 + JEU;
   const platArriere = new THREE.Mesh(geoPlat, matRel);
   platArriere.position.z = -(PAGES_E / 2 + PLAT_E / 2 + JEU);
+
+  const geoJaquette = new THREE.ShapeGeometry(formePlat());
+  normaliserUV(geoJaquette);
+  const jaquette = new THREE.Mesh(geoJaquette, matCouv);
+  jaquette.position.z = platAvant.position.z + PLAT_E / 2 + 0.002;
 
   const dos = new THREE.Mesh(
     new THREE.CylinderGeometry(DOS_R, DOS_R, PLAT_H, 24, 1, false, Math.PI, Math.PI),
@@ -133,7 +139,7 @@ function construireLivre() {
   );
   pages.position.x = DOS_X + PAGES_L / 2;                   // collé au dos, en retrait de la gouttière
 
-  g.add(platAvant, platArriere, dos, pages);
+  g.add(platAvant, jaquette, platArriere, dos, pages);
   return g;
 }
 
